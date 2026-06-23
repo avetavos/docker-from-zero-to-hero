@@ -9,25 +9,26 @@ export default defineConfig({
   // GitHub Pages project site. Update `site` to your GitHub username and `base`
   // to your repo name if they differ.
   site: 'https://avetavos.github.io',
-  base: '/rust-deep-dive',
+  base: '/docker-from-zero-to-hero',
   output: 'static',
   integrations: [starlight({
-      title: 'Rust Deep Dive',
+      title: 'Docker — From Zero to Hero',
       defaultLocale: 'en',
       locales: {
         en: { label: 'English', lang: 'en' },
         th: { label: 'ไทย', lang: 'th' },
       },
       customCss: ['./src/styles/custom.css'],
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/avetavos/rust-deep-dive' }],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/avetavos/docker-from-zero-to-hero' }],
       sidebar: [
-        { label: 'Basics & Syntax', items: [{ autogenerate: { directory: 'basics' } }] },
-        { label: 'Ownership & Borrowing', items: [{ autogenerate: { directory: 'ownership-borrowing' } }] },
-        { label: 'Structs, Enums & Pattern Matching', items: [{ autogenerate: { directory: 'structs-enums-matching' } }] },
-        { label: 'Traits & Generics', items: [{ autogenerate: { directory: 'traits-generics' } }] },
-        { label: 'Error Handling', items: [{ autogenerate: { directory: 'error-handling' } }] },
-        { label: 'Collections & Iterators', items: [{ autogenerate: { directory: 'collections-iterators' } }] },
-        { label: 'Concurrency, Testing & Cargo', items: [{ autogenerate: { directory: 'concurrency-testing-cargo' } }] },
+        { label: 'Intro & Concepts', items: [{ autogenerate: { directory: 'intro' } }] },
+        { label: 'Images & the Dockerfile', items: [{ autogenerate: { directory: 'images-dockerfile' } }] },
+        { label: 'Running Containers', items: [{ autogenerate: { directory: 'containers' } }] },
+        { label: 'Data & Volumes', items: [{ autogenerate: { directory: 'data-volumes' } }] },
+        { label: 'Networking', items: [{ autogenerate: { directory: 'networking' } }] },
+        { label: 'Docker Compose', items: [{ autogenerate: { directory: 'compose' } }] },
+        { label: 'Optimization & Best Practices', items: [{ autogenerate: { directory: 'optimization' } }] },
+        { label: 'Registry, CI & Deploy', items: [{ autogenerate: { directory: 'registry-ci-deploy' } }] },
       ],
       }), preact()],
 });
