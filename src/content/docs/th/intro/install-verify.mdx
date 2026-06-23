@@ -85,47 +85,49 @@ docker run hello-world`
 หาก server section หายไปในผลลัพธ์ของ `docker version` แสดงว่า Docker daemon ไม่ได้ทำงานอยู่ บน macOS และ Windows ให้เปิด Docker Desktop ก่อน บน Linux ให้รัน `sudo systemctl start docker` หรือตรวจสอบว่าคุณอยู่ในกลุ่ม `docker`
 </Callout>
 
-<Quiz client:visible id="intro/install-verify" questions={[
+export const quizInstallVerify = [
   {
-    q: "ความแตกต่างหลักระหว่าง Docker Desktop กับ Docker Engine คืออะไร?",
+    q: "ระบบปฏิบัติการใดที่แนะนำให้ติดตั้งด้วย Docker Desktop?",
     options: [
-      "Docker Desktop ใช้งานได้เฉพาะบน macOS เท่านั้น",
-      "Docker Desktop รวม GUI, Compose และ Kubernetes ไว้ด้วย ส่วน Docker Engine เป็น daemon บรรทัดคำสั่งสำหรับ Linux",
-      "Docker Engine เร็วกว่า Docker Desktop เพราะใช้ hypervisor อื่น",
-      "Docker Desktop ต้องการ WSL 2 บน macOS"
+      "Linux และ macOS",
+      "macOS และ Windows",
+      "Windows และ Linux",
+      "ทุกระบบปฏิบัติการ — Docker Desktop ใช้ได้ทั่วไป"
     ],
     answer: 1
   },
   {
-    q: "คุณรัน `docker version` และ server section หายไป ปัญหาคืออะไร?",
+    q: "`docker version` แสดงอะไรที่ `docker --version` ไม่แสดง?",
     options: [
-      "Docker client ไม่ได้ติดตั้งอย่างถูกต้อง",
-      "คุณใช้เวอร์ชัน Docker ที่ล้าสมัย",
+      "ผู้ใช้ปัจจุบันและ home directory",
+      "รายละเอียดเวอร์ชันของทั้ง Client และ Server (daemon)",
+      "รายการปลั๊กอินที่ติดตั้งไว้",
+      "สถานะการยืนยันตัวตนกับ Docker Hub"
+    ],
+    answer: 1
+  },
+  {
+    q: "คุณรัน `docker version` แล้วเห็นเฉพาะส่วน Client — ไม่มีส่วน Server หมายความว่าอะไร?",
+    options: [
+      "การติดตั้ง Docker ล้าสมัยและต้องอัปเกรด",
       "Docker daemon ไม่ได้ทำงานอยู่",
-      "คำสั่ง version ต้องการ sudo"
-    ],
-    answer: 2
-  },
-  {
-    q: "คำสั่ง `docker run hello-world` ทำอะไร?",
-    options: [
-      "สร้าง VM ใหม่เพื่อทดสอบ Docker",
-      "ดึง hello-world image จาก registry รันในคอนเทนเนอร์ และพิมพ์ข้อความยืนยัน",
-      "ตรวจสอบเฉพาะว่า Docker client ติดตั้งอยู่หรือไม่",
-      "เริ่มต้น Docker daemon ถ้ายังไม่ทำงาน"
+      "คุณไม่มีการเชื่อมต่อเครือข่ายไปยัง Docker Hub",
+      "ส่วน Server ถูกซ่อนไว้เพื่อความปลอดภัย"
     ],
     answer: 1
   },
   {
-    q: "ทำไมคุณถึงรัน `sudo usermod -aG docker $USER` บน Linux?",
+    q: "การรัน `docker run hello-world` หลังติดตั้ง Docker มีจุดประสงค์อะไร?",
     options: [
-      "เพื่อติดตั้ง Docker Engine",
-      "เพื่อเปิดใช้งาน WSL 2",
-      "เพื่อให้รัน Docker commands โดยไม่ต้องใช้ sudo",
-      "เพื่ออัปเดต Docker เป็นเวอร์ชันล่าสุด"
+      "ตั้งค่า Docker Desktop ด้วยค่าเริ่มต้น",
+      "ยืนยันทั้งกระบวนการ: CLI, daemon, การดึง image และการรันคอนเทนเนอร์",
+      "ลงทะเบียนเครื่องของคุณกับ Docker Hub",
+      "ติดตั้ง hello-world image ถาวรไว้ใช้แบบออฟไลน์"
     ],
-    answer: 2
+    answer: 1
   }
-]} />
+];
+
+<Quiz client:visible id="intro/install-verify" questions={quizInstallVerify} />
 
 <ProgressTracker client:visible id="intro/install-verify" />
