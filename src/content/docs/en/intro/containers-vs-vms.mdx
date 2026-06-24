@@ -8,6 +8,39 @@ sidebar:
 import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+
+export const stackDiagram = `flowchart TB
+  subgraph VM["Virtual Machine stack"]
+    direction TB
+    vmApp["Application"] --> vmGuest["Guest OS (kernel + system libs)"]
+    vmGuest --> vmHyper["Hypervisor (VMware, KVM, Hyper-V)"]
+    vmHyper --> vmHost["Host OS Kernel"]
+    vmHost --> vmHw["Hardware"]
+  end
+  subgraph CT["Container stack"]
+    direction TB
+    ctApp["Application"] --> ctRt["Container Runtime (containerd / runc)"]
+    ctRt --> ctHost["Host OS Kernel"]
+    ctHost --> ctHw["Hardware"]
+  end`;
+
+export const layersDiagram = `flowchart TB
+  subgraph IMG["Image (read-only layers)"]
+    direction TB
+    i3["Layer 3: app binary"]
+    i2["Layer 2: python:3.12"]
+    i1["Layer 1: debian:bookworm-slim"]
+    i3 --> i2 --> i1
+  end
+  subgraph CON["Container = Image + writable layer"]
+    direction TB
+    cw["Writable layer (runtime changes)"]
+    c3["Layer 3: app binary (shared, read-only)"]
+    c2["Layer 2: python:3.12 (shared, read-only)"]
+    c1["Layer 1: debian:bookworm-slim (shared, read-only)"]
+    cw --> c3 --> c2 --> c1
+  end`;
 
 ## The fundamental difference
 
@@ -19,22 +52,7 @@ A **container** skips the guest OS entirely. It shares the host kernel and isola
 
 ## Stack comparison
 
-```text
-Virtual Machine stack
-─────────────────────
-  Application
-  Guest OS (kernel + system libs)
-  Hypervisor (VMware, KVM, Hyper-V…)
-  Host OS Kernel
-  Hardware
-
-Container stack
-───────────────
-  Application
-  Container Runtime (containerd / runc)
-  Host OS Kernel
-  Hardware
-```
+<Mermaid code={stackDiagram} title="VM stack vs container stack" />
 
 The hypervisor layer and the guest OS are gone in the container model. Multiple containers on the same host share one kernel, making the per-container footprint dramatically smaller.
 
@@ -58,18 +76,7 @@ These two terms are often confused. The distinction is precise:
 - An **image** is a static, read-only blueprint — a layered filesystem snapshot that includes your application, its dependencies, and metadata. Images are built once and shared via registries.
 - A **container** is a running (or stopped) instance of an image. When Docker starts a container it adds a thin, writable layer on top of the read-only image layers. You can run many containers from the same image simultaneously; they all share the same image layers but each gets its own writable layer.
 
-```text
-Image (read-only layers)
-  └─ Layer 3: app binary
-  └─ Layer 2: python:3.12
-  └─ Layer 1: debian:bookworm-slim
-
-Container = Image + writable layer
-  └─ Writable layer (runtime changes)
-  └─ Layer 3: app binary       ← shared, read-only
-  └─ Layer 2: python:3.12      ← shared, read-only
-  └─ Layer 1: debian:bookworm-slim  ← shared, read-only
-```
+<Mermaid code={layersDiagram} title="Image layers vs container layers" />
 
 Deleting a container removes only its writable layer. The underlying image is untouched and can be used to spin up a fresh container immediately.
 

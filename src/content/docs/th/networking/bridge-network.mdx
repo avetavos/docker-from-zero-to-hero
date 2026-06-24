@@ -9,6 +9,16 @@ import PlayWithDocker from '../../../../components/PlayWithDocker.tsx';
 import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+
+export const bridgeDiagram = `flowchart TB
+  host["Host"]
+  bridge["docker0 (172.17.0.1)"]
+  c1["container c1 (172.17.0.2)"]
+  c2["container c2 (172.17.0.3)"]
+  host --> bridge
+  bridge --> c1
+  bridge --> c2`;
 
 ## Default Bridge ทำงานอย่างไร
 
@@ -16,12 +26,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 Container บน default bridge จะได้รับ IP address จาก subnet `172.17.0.0/16` โดย gateway — และ host เอง — อยู่ที่ `172.17.0.1`
 
-```text
-Host
-  └── docker0 (172.17.0.1)
-        ├── container c1  (172.17.0.2)
-        └── container c2  (172.17.0.3)
-```
+<Mermaid code={bridgeDiagram} title="Containers attached to the default docker0 bridge" />
 
 ## รัน Container สองตัวและตรวจสอบ IP
 

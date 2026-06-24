@@ -46,7 +46,7 @@ The key insight: **only the last stage is exported as the final image**. All int
 ```dockerfile
 # syntax=docker/dockerfile:1
 
-# ── Stage 1: build ─────────────────────────────────────────────
+# --- Stage 1: build ---
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -54,7 +54,7 @@ RUN npm ci
 COPY src/ ./src/
 RUN npm run build        # produces dist/
 
-# ── Stage 2: runtime ───────────────────────────────────────────
+# --- Stage 2: runtime ---
 FROM node:22-alpine AS runtime
 WORKDIR /app
 COPY --from=build /app/dist ./dist

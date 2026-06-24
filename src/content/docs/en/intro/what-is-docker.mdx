@@ -8,6 +8,27 @@ sidebar:
 import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+
+export const imageRefDiagram = `flowchart TB
+  ref["docker.io/library/nginx:1.27-alpine"]
+  ref --> host["registry host: docker.io"]
+  ref --> ns["namespace: library (official images)"]
+  ref --> repo["repository name: nginx"]
+  ref --> tag["tag: 1.27-alpine"]`;
+
+export const runFlowDiagram = `flowchart TB
+  you["You (terminal): docker run nginx"]
+  cli["docker CLI"]
+  daemon["dockerd (daemon)"]
+  registry["Docker Hub (or other registry)"]
+  cache["Local image cache"]
+  container["Running container (isolated process on host kernel)"]
+  you --> cli
+  cli -->|REST API over Unix socket| daemon
+  daemon -->|Image not in local cache| registry
+  registry -->|Pull image layers| cache
+  cache -->|Create container from image| container`;
 
 ## The four pieces of Docker
 
@@ -40,13 +61,7 @@ A registry is a server that stores and distributes images. The default public re
 
 Registries organise images into **repositories**. A repository can hold many versions of the same image, distinguished by **tags**:
 
-```text
-docker.io/library/nginx:1.27-alpine
-│          │       │     └─ tag
-│          │       └─ repository name
-│          └─ namespace (library = official images)
-└─ registry host
-```
+<Mermaid code={imageRefDiagram} title="Anatomy of an image reference" />
 
 Private registries (Amazon ECR, GitHub Container Registry, a self-hosted registry) work the same way — you just `docker login` to authenticate before pushing or pulling.
 
@@ -54,24 +69,7 @@ Private registries (Amazon ECR, GitHub Container Registry, a self-hosted registr
 
 The flow every `docker run` command follows:
 
-```text
-You (terminal)
-    │
-    ▼
-docker CLI  ──REST API──►  dockerd  ──────────────────────────────────────────────┐
-                               │                                                  │
-                               │  Image not in local cache?                       │
-                               ▼                                                  │
-                         Docker Hub (or other registry)                           │
-                               │                                                  │
-                               │  Pull image layers to local cache                │
-                               ▼                                                  │
-                         Local image cache  ◄──────────────────────────────────────┘
-                               │
-                               │  Create container from image
-                               ▼
-                         Running container (isolated process on host kernel)
-```
+<Mermaid code={runFlowDiagram} title="What happens when you run docker run" />
 
 1. You type `docker run nginx`.
 2. The CLI sends a `POST /containers/create` request to `dockerd` over the Unix socket.

@@ -9,6 +9,22 @@ import PlayWithDocker from '../../../../components/PlayWithDocker.tsx';
 import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+
+export const imageLayersDiagram = `flowchart TB
+  img["Image (read-only)"]
+  l3["Layer 3: COPY app/ /app/ (your code)"]
+  l2["Layer 2: RUN npm install (dependencies)"]
+  l1["Layer 1: FROM node:22-alpine (base OS + runtime)"]
+  img --> l3 --> l2 --> l1`;
+
+export const containerLayersDiagram = `flowchart TB
+  con["Container (running)"]
+  w["Writable layer (container-specific changes, deleted on stop)"]
+  l3["Layer 3 (read-only)"]
+  l2["Layer 2 (read-only)"]
+  l1["Layer 1 (read-only)"]
+  con --> w --> l3 --> l2 --> l1`;
 
 ## What is a Docker image?
 
@@ -16,22 +32,11 @@ A Docker **image** is a read-only package that contains everything needed to run
 
 Images are built from stacked, read-only **layers**. Each layer represents a change — a file added, a package installed, a configuration written. When you stack layers on top of each other you get a complete filesystem, but Docker only stores (and transfers) the layers that have changed, keeping images lean.
 
-```text
-Image (read-only)
-├── Layer 3: COPY app/ /app/          ← your code
-├── Layer 2: RUN npm install          ← dependencies
-├── Layer 1: FROM node:22-alpine      ← base OS + runtime
-```
+<Mermaid code={imageLayersDiagram} title="An image is a stack of read-only layers" />
 
 A running **container** is an image with one extra writable layer on top. The image is untouched — the container writes to its own scratch layer. Stop the container and that layer disappears (unless you save it).
 
-```text
-Container (running)
-├── Writable layer  ← container-specific changes (deleted on stop)
-├── Layer 3 (read-only)
-├── Layer 2 (read-only)
-└── Layer 1 (read-only)
-```
+<Mermaid code={containerLayersDiagram} title="A container adds a writable layer on top of the image" />
 
 ## What is a Dockerfile?
 

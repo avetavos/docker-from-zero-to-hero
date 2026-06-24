@@ -8,6 +8,39 @@ sidebar:
 import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
+import Mermaid from '../../../../components/Mermaid.astro';
+
+export const stackDiagram = `flowchart TB
+  subgraph VM["Virtual Machine stack"]
+    direction TB
+    vmApp["Application"] --> vmGuest["Guest OS (kernel + system libs)"]
+    vmGuest --> vmHyper["Hypervisor (VMware, KVM, Hyper-V)"]
+    vmHyper --> vmHost["Host OS Kernel"]
+    vmHost --> vmHw["Hardware"]
+  end
+  subgraph CT["Container stack"]
+    direction TB
+    ctApp["Application"] --> ctRt["Container Runtime (containerd / runc)"]
+    ctRt --> ctHost["Host OS Kernel"]
+    ctHost --> ctHw["Hardware"]
+  end`;
+
+export const layersDiagram = `flowchart TB
+  subgraph IMG["Image (read-only layers)"]
+    direction TB
+    i3["Layer 3: app binary"]
+    i2["Layer 2: python:3.12"]
+    i1["Layer 1: debian:bookworm-slim"]
+    i3 --> i2 --> i1
+  end
+  subgraph CON["Container = Image + writable layer"]
+    direction TB
+    cw["Writable layer (runtime changes)"]
+    c3["Layer 3: app binary (shared, read-only)"]
+    c2["Layer 2: python:3.12 (shared, read-only)"]
+    c1["Layer 1: debian:bookworm-slim (shared, read-only)"]
+    cw --> c3 --> c2 --> c1
+  end`;
 
 ## ความแตกต่างพื้นฐาน
 
@@ -19,22 +52,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## การเปรียบเทียบสแต็ก
 
-```text
-Virtual Machine stack
-─────────────────────
-  Application
-  Guest OS (kernel + system libs)
-  Hypervisor (VMware, KVM, Hyper-V…)
-  Host OS Kernel
-  Hardware
-
-Container stack
-───────────────
-  Application
-  Container Runtime (containerd / runc)
-  Host OS Kernel
-  Hardware
-```
+<Mermaid code={stackDiagram} title="VM stack vs container stack" />
 
 ชั้นไฮเปอร์ไวเซอร์และ guest OS หายไปในโมเดลคอนเทนเนอร์ คอนเทนเนอร์หลายตัวบนโฮสต์เดียวกันแชร์เคอร์เนลเดียว ทำให้ขนาดต่อคอนเทนเนอร์เล็กลงอย่างมาก
 
@@ -58,18 +76,7 @@ Container stack
 - **อิมเมจ** คือ blueprint แบบ static อ่านอย่างเดียว — snapshot ของ layered filesystem ที่รวมแอปพลิเคชัน dependencies และ metadata ของคุณ อิมเมจสร้างครั้งเดียวและแชร์ผ่าน registry
 - **คอนเทนเนอร์** คือ instance ที่กำลังทำงาน (หรือหยุด) ของอิมเมจ เมื่อ Docker เริ่มคอนเทนเนอร์ มันเพิ่ม thin writable layer บน read-only image layers คุณสามารถรันคอนเทนเนอร์หลายตัวจากอิมเมจเดียวกันพร้อมกัน; ทั้งหมดแชร์ image layers เดียวกัน แต่แต่ละตัวได้รับ writable layer ของตัวเอง
 
-```text
-Image (read-only layers)
-  └─ Layer 3: app binary
-  └─ Layer 2: python:3.12
-  └─ Layer 1: debian:bookworm-slim
-
-Container = Image + writable layer
-  └─ Writable layer (runtime changes)
-  └─ Layer 3: app binary       ← shared, read-only
-  └─ Layer 2: python:3.12      ← shared, read-only
-  └─ Layer 1: debian:bookworm-slim  ← shared, read-only
-```
+<Mermaid code={layersDiagram} title="Image layers vs container layers" />
 
 การลบคอนเทนเนอร์จะลบเฉพาะ writable layer ของมัน อิมเมจพื้นฐานยังคงอยู่และสามารถนำมาใช้สร้างคอนเทนเนอร์ใหม่ได้ทันที
 
