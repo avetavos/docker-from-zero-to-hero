@@ -34,7 +34,7 @@ myapp               naive      1.21GB
 myapp               optimized  112MB
 ```
 
-ลดลงถึง **10 เท่า** โดยไม่มีการเปลี่ยนแปลงพฤติกรรมของแอปพลิเคชัน — เปลี่ยนแค่ Dockerfile เท่านั้น
+ลดลงถึง **10 เท่า** โดยไม่มีการเปลี่ยนแปลงพฤติกรรมของ application — เปลี่ยนแค่ Dockerfile เท่านั้น
 
 ## โมดูลนี้ครอบคลุมอะไรบ้าง
 
@@ -74,7 +74,7 @@ CMD ["node","index.js"]
 <PlayWithDocker client:visible code={optimizationIndexCode} label="Compare image sizes" />
 
 <Callout title="Image เล็กกว่า = pull เร็วกว่าและ attack surface เล็กกว่า">
-ทุก package ที่ติดตั้งใน Docker image คือช่องโหว่ที่อาจเกิดขึ้นได้ การทำให้ image เล็กไม่ใช่แค่เรื่องความเร็ว แต่ยังช่วยลดจำนวน component ที่ต้องได้รับการ patch, scan และ maintain runtime image ควรมีเฉพาะสิ่งที่แอปพลิเคชันต้องการ ไม่มากไปกว่านั้น
+ทุก package ที่ติดตั้งใน Docker image คือช่องโหว่ที่อาจเกิดขึ้นได้ การทำให้ image เล็กไม่ใช่แค่เรื่องความเร็ว แต่ยังช่วยลดจำนวน component ที่ต้องได้รับการ patch, scan และ maintain runtime image ควรมีเฉพาะสิ่งที่ application ต้องการ ไม่มากไปกว่านั้น
 </Callout>
 
 export const quizOptimizationIndex = [

@@ -11,7 +11,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## Container คืออะไร?
 
-Image คือพิมพ์เขียว ส่วน **container** คือ instance ที่กำลังทำงานอยู่จริงของพิมพ์เขียวนั้น — เป็นกระบวนการที่ถูกแยกออกมา มีระบบไฟล์, เครือข่าย, และ process space เป็นของตัวเอง โดยทั้งหมดใช้ host kernel ร่วมกัน
+Image คือพิมพ์เขียว ส่วน **container** คือ instance ที่กำลังทำงานอยู่จริงของพิมพ์เขียวนั้น — เป็น process ที่ถูกแยกออกมา มีระบบไฟล์, network, และ process space เป็นของตัวเอง โดยทั้งหมดใช้ host kernel ร่วมกัน
 
 คุณสามารถรัน container หลายตัวจาก image เดียวกัน, หยุดและรีสตาร์ทได้, ดู log, และลบทิ้งเมื่อใช้งานเสร็จ การเข้าใจวงจรชีวิตนี้เป็นพื้นฐานสำคัญของการทำงานกับ Docker ในชีวิตประจำวัน
 
@@ -22,8 +22,8 @@ Container ผ่านสถานะทั้งสี่นี้:
 | สถานะ | ความหมาย |
 |-------|----------|
 | **Created** | `docker create` จัดสรร container ไว้แล้ว แต่ยังไม่เริ่มทำงาน |
-| **Running** | กระบวนการหลักของ container กำลังทำงานอยู่ |
-| **Stopped** | กระบวนการหลักสิ้นสุดแล้ว (หรือคุณเรียก `docker stop`) — container ยังอยู่บนดิสก์ |
+| **Running** | process หลักของ container กำลังทำงานอยู่ |
+| **Stopped** | process หลักสิ้นสุดแล้ว (หรือคุณเรียก `docker stop`) — container ยังอยู่บนดิสก์ |
 | **Removed** | `docker rm` ลบ container และคืนพื้นที่ writable layer |
 
 ```text
@@ -39,7 +39,7 @@ docker rm    →  Removed (gone)
 |---------|--------|
 | **Lifecycle** | `docker run`, `docker ps`, `docker stop/start/restart`, `docker rm`, `--rm` |
 | **Exec & Logs** | `docker exec -it`, `docker logs`, `docker top`, การ attach |
-| **Ports & Env** | เผยแพร่พอร์ตด้วย `-p`, ตัวแปร environment ด้วย `-e`, การตั้งชื่อด้วย `--name` |
+| **Ports & Env** | เผยแพร่ port ด้วย `-p`, ตัวแปร environment ด้วย `-e`, การตั้งชื่อด้วย `--name` |
 | **Restart & Inspect** | นโยบาย restart, `docker inspect`, `docker stats`, การจำกัด resource |
 
 ## ตัวอย่างด่วน — รัน, แสดงรายการ, และหยุด
@@ -96,7 +96,7 @@ export const quizContainersIndex = [
   {
     q: "ความแตกต่างระหว่าง image กับ container คืออะไร?",
     options: [
-      "Image คือกระบวนการที่กำลังทำงาน; container คือไฟล์แบบ static",
+      "Image คือ process ที่กำลังทำงาน; container คือไฟล์แบบ static",
       "Image คือพิมพ์เขียว; container คือ instance ที่กำลังทำงานของพิมพ์เขียวนั้น",
       "ทั้งสองเหมือนกันแค่ชื่อต่างกัน",
       "Container สร้างด้วย docker build; image เริ่มต้นด้วย docker run"

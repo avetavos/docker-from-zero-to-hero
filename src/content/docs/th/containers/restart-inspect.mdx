@@ -113,6 +113,23 @@ docker stop webserver limited && docker rm webserver limited`;
 `unless-stopped` คือนโยบาย restart ที่แนะนำสำหรับ service อย่าง web server, database, และ background worker Container จะรอดจาก host reboot และ crash ที่ไม่คาดคิดอัตโนมัติ แต่ยังยอมรับ `docker stop` ที่ตั้งใจ — เพื่อให้คุณสามารถนำออกจากการให้บริการเพื่อ maintenance ได้โดยไม่มีปัญหา
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| `--restart always` | auto-heal container ที่ crash โดยไม่ต้องมีคนคอยดู รอดจาก host reboot เสมอ | ซ่อน crash loop ไว้ — container ที่ตายซ้ำๆ ดูเหมือน "ทำงานปกติ" เพราะ Docker รีสตาร์ทให้ตลอด |
+| `--restart on-failure:N` | จำกัดจำนวนครั้ง ป้องกัน infinite restart loop สังเกตปัญหาได้เร็วกว่าเพราะสุดท้ายจะหยุด | ถ้าตั้ง `N` ต่ำไป container อาจหยุดถาวรก่อนที่ปัญหาจริง (เช่น dependency ยังไม่พร้อม) จะถูกแก้ |
+
+## Common Mistakes
+
+- ตั้ง `--restart always` แล้วไม่เคยเช็ค `docker logs` เลย ทำให้ไม่รู้ว่า container วนลูป crash-restart อยู่เบื้องหลัง
+- `docker restart` ทันทีที่ container มีปัญหา โดยไม่ดู exit code จาก `docker inspect --format '{{.State.ExitCode}}'` ก่อน ทำให้แก้ปัญหาผิดจุด
+- ไม่ตั้งค่า `--memory`/`--cpus` เลย ปล่อยให้ container เดียวกิน resource จน host หรือ container ตัวอื่นล่มตามไปด้วย
+
+> 💡 Real World Example
+>
+> Kubernetes ต่อยอดแนวคิด `--restart` ของ Docker เป็น `restartPolicy` (`Always`/`OnFailure`/`Never`) บวกกับ `livenessProbe` ที่คอย health check เป็นระยะ ถ้า container ไม่ตอบสนอง Kubernetes จะ kill แล้ว restart ให้อัตโนมัติ — เป็นภาพขยายของสิ่งที่ Docker ทำในเครื่องเดียว ไปสู่ระดับ cluster
+
 export const quizRestartInspect = [
   {
     q: "นโยบาย restart ใดเริ่ม container อัตโนมัติหลัง host reboot แต่ยอมรับ 'docker stop' ด้วยตนเอง?",
@@ -138,8 +155,8 @@ export const quizRestartInspect = [
     q: "เกิดอะไรขึ้นเมื่อ container เกินขีดจำกัด --memory?",
     options: [
       "Docker หยุด container ชั่วคราวจนกว่า memory จะว่าง",
-      "Docker แสดง warning แต่ไม่ดำเนินการใดๆ",
-      "กระบวนการของ container ถูก OOM-kill โดย kernel",
+      "Docker แสดง warning แต่ไม่ทำงานใดๆ",
+      "process ของ container ถูก OOM-kill โดย kernel",
       "Docker เพิ่มขีดจำกัดอัตโนมัติ"
     ],
     answer: 2

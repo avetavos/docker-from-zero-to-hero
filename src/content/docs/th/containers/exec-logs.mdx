@@ -12,7 +12,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## การเปิด shell ใน container ที่กำลังทำงาน
 
-`docker exec` รัน **กระบวนการใหม่** ภายใน container ที่กำลังทำงานอยู่ การใช้งานที่พบบ่อยที่สุดคือการเปิด interactive shell:
+`docker exec` รัน **process ใหม่** ภายใน container ที่กำลังทำงานอยู่ การใช้งานที่พบบ่อยที่สุดคือการเปิด interactive shell:
 
 ```bash
 docker exec -it <container> sh
@@ -102,9 +102,26 @@ docker logs -f webserver`;
 
 <PlayWithDocker client:visible code={execLogsCode} label="Exec เข้า container และตรวจสอบ log" />
 
-<Callout title="exec รันกระบวนการใหม่ — ไม่ใช่ container ใหม่">
-`docker exec` เริ่ม **กระบวนการใหม่** ภายใน container ที่มีอยู่ซึ่งกำลังทำงานอยู่ ไม่ได้สร้าง container ที่สอง เมื่อคุณ exit จาก shell container จะยังคงทำงานต่อด้วยกระบวนการหลักเดิม
+<Callout title="exec รัน process ใหม่ — ไม่ใช่ container ใหม่">
+`docker exec` เริ่ม **process ใหม่** ภายใน container ที่มีอยู่ซึ่งกำลังทำงานอยู่ ไม่ได้สร้าง container ที่สอง เมื่อคุณ exit จาก shell container จะยังคงทำงานต่อด้วย process หลักเดิม
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| `docker exec -it` เข้าไป debug สด | เห็นสถานะจริงทันที แก้ปัญหาเฉพาะหน้าได้เร็ว | ไม่ persist ไม่มี audit trail และลืมง่ายว่าแก้อะไรไปบ้าง |
+| `docker logs` + centralized logging | มี history ย้อนหลัง ค้นหาและแชร์ให้ทีมดูได้ | ต้องตั้งค่า logging driver หรือ log aggregator เพิ่ม |
+
+## Common Mistakes
+
+- ใช้ `docker exec` เข้าไปแก้ไฟล์ใน container สดๆ แทนที่จะแก้ที่ image หรือ Dockerfile แล้ว build ใหม่ ทำให้การเปลี่ยนแปลงหายไปเมื่อ container ถูกลบ
+- รีบ `docker exec` เข้าไป debug ทั้งที่ยังไม่ได้เช็ค `docker logs` ก่อน ทั้งที่ log มักบอกสาเหตุตรงๆ อยู่แล้ว
+- พึ่ง `docker exec` เป็นเครื่องมือ debug หลักแทนการทำ logging/monitoring ที่เหมาะสม ทำให้ debug ได้เฉพาะตอน container ยังไม่ตาย — container ที่ crash แล้วจะ exec เข้าไปไม่ได้อีกต่อไป
+
+> 💡 Real World Example
+>
+> `kubectl logs` และ `kubectl exec` ของ Kubernetes ทำงานบนแนวคิดเดียวกับ `docker logs`/`docker exec` เป๊ะๆ เพียงแต่ orchestrate ระดับ cluster ทีม SRE ที่ debug production มักเริ่มจาก `kubectl logs` เสมอ แล้วค่อย exec เข้าไปดูเป็นทางเลือกสุดท้าย
 
 export const quizExecLogs = [
   {
@@ -132,7 +149,7 @@ export const quizExecLogs = [
     options: [
       "Container หยุดทำงาน",
       "Container ถูกลบ",
-      "Container ยังทำงานต่อ — เฉพาะกระบวนการ exec สิ้นสุด",
+      "Container ยังทำงานต่อ — เฉพาะ process exec สิ้นสุด",
       "Container รีสตาร์ท"
     ],
     answer: 2

@@ -84,8 +84,25 @@ docker network rm appnet`;
 <PlayWithDocker client:visible code={containerDNSCode} label="ทดสอบ DNS บน user-defined network" />
 
 <Callout title="User-defined network มอบ DNS ให้คุณ">
-สร้างเครือข่ายด้วย `docker network create` และเชื่อมต่อ container ด้วย `--network` Container ที่อยู่บน user-defined bridge เดียวกันจะ resolve ชื่อ container ของกันและกันได้โดยอัตโนมัติ
+สร้าง network ด้วย `docker network create` และเชื่อมต่อ container ด้วย `--network` Container ที่อยู่บน user-defined bridge เดียวกันจะ resolve ชื่อ container ของกันและกันได้โดยอัตโนมัติ
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| ต่อกันด้วย IP address | ไม่ต้องพึ่ง DNS resolver ใด ๆ | ต้องคอย query IP ใหม่ทุกครั้งที่ container restart เพราะ IP เปลี่ยนได้เสมอ |
+| ต่อกันด้วยชื่อ container (DNS) | resolve ชื่อเป็น IP ให้อัตโนมัติ อ้างอิงได้แม้ IP จะเปลี่ยน | ใช้ได้เฉพาะบน user-defined network เท่านั้น ไม่ทำงานบน default bridge |
+
+## Common Mistakes
+
+- Hardcode IP address ของ container ไว้ในโค้ดหรือ environment variable แทนที่จะใช้ชื่อ container เป็น DNS name ทำให้ระบบพังทันทีที่ container ถูกสร้างใหม่และได้ IP อื่น
+- คาดหวังว่า DNS resolution จะทำงานบน default bridge network ทั้งที่ embedded DNS resolver ของ Docker รองรับเฉพาะ user-defined network เท่านั้น
+- ลืมว่า container ต้องอยู่บน user-defined network **เดียวกันจริง ๆ** ถึงจะ resolve ชื่อกันได้ — อยู่คนละ user-defined network ก็ resolve กันไม่ได้เหมือนกัน
+
+> 💡 Real World Example
+>
+> ใน `docker-compose.yml` ชื่อ service เองก็คือ DNS hostname อยู่แล้ว เช่น service `web` เชื่อมต่อ database ได้ด้วย `db:5432` ตรง ๆ โดยไม่ต้องรู้ IP เลย เพราะ Compose สร้าง user-defined network ให้อัตโนมัติและลงทะเบียน DNS ของทุก service ไว้ในนั้น
 
 export const quizContainerDNS = [
   {

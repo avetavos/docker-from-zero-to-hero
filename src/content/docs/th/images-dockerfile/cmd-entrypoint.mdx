@@ -144,8 +144,25 @@ CMD ["Hello from ENTRYPOINT + CMD!"]
 <PlayWithDocker client:visible code={cmdEntrypointCode} label="Experiment with CMD and ENTRYPOINT" />
 
 <Callout title="ใช้ exec form; ENTRYPOINT กำหนด executable, CMD กำหนดค่าเริ่มต้น">
-ให้เลือกใช้ exec form (`["executable", "arg"]`) แทน shell form เสมอ — โปรเซสของคุณจะรับสัญญาณ OS โดยตรงในฐานะ PID 1 ทำให้ shutdown แบบ graceful ได้ ใช้ `ENTRYPOINT` เพื่อนิยามว่า container _คือ_ อะไร (เช่น ตัวรัน Node.js, เครื่องมือ CLI) ใช้ `CMD` เพื่อจัดเตรียมอาร์กิวเมนต์เริ่มต้นที่สมเหตุสมผลซึ่งผู้ใช้สามารถ override ได้ง่ายตอน `docker run` โดยไม่ต้องแตะ Dockerfile
+ให้เลือกใช้ exec form (`["executable", "arg"]`) แทน shell form เสมอ — โปรเซสของคุณจะรับสัญญาณ OS โดยตรงในฐานะ PID 1 ทำให้ shutdown แบบ graceful ได้ ใช้ `ENTRYPOINT` เพื่อนิยามว่า container _คือ_ อะไร (เช่น ตัวรัน Node.js, เครื่องมือ CLI) ใช้ `CMD` เพื่อเตรียมอาร์กิวเมนต์เริ่มต้นที่สมเหตุสมผลซึ่งผู้ใช้สามารถ override ได้ง่ายตอน `docker run` โดยไม่ต้องแตะ Dockerfile
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| `CMD` | override ได้ง่ายตอน `docker run` เหมาะกับ dev/debug | ผู้ใช้เผลอเปลี่ยนพฤติกรรม default ทั้งหมดโดยไม่ตั้งใจได้ |
+| `ENTRYPOINT` | ตายตัว บังคับให้ container ทำหน้าที่เดียวเสมอ ปลอดภัยกว่าใน production | override ยากขึ้น ต้องใช้ `--entrypoint` ทำให้ debug ลำบากกว่า |
+
+## Common Mistakes
+
+- ใช้ shell form แทน exec form ทำให้โปรเซสไม่ได้เป็น PID 1 รับสัญญาณ OS ไม่ได้ shutdown ไม่ graceful
+- ใส่ทั้ง executable และอาร์กิวเมนต์ไว้ใน `ENTRYPOINT` เดียวกันหมด ทำให้ `CMD` override อะไรไม่ได้เลย
+- เข้าใจผิดว่าอาร์กิวเมนต์ที่ส่งตอน `docker run` จะถูกต่อท้าย `CMD` เสมอ ทั้งที่จริงมันแทนที่ `CMD` ทั้งหมด
+
+> 💡 Real World Example
+>
+> Official image ของ `postgres` ใช้ `ENTRYPOINT ["docker-entrypoint.sh"]` เป็น executable ตายตัว และใช้ `CMD ["postgres"]` เป็นอาร์กิวเมนต์เริ่มต้น ผู้ใช้จึง override เฉพาะอาร์กิวเมนต์ของ `postgres` ได้โดยไม่ต้องแตะ entrypoint script
 
 export const quizCmdEntrypoint = [
   {
@@ -182,9 +199,9 @@ export const quizCmdEntrypoint = [
     q: "การใช้ CMD ตามสำนวนที่นิยมเมื่อมีการตั้ง ENTRYPOINT ไว้ด้วยคืออะไร?",
     options: [
       "CMD ถูกละเว้นเมื่อมี ENTRYPOINT อยู่",
-      "CMD จัดเตรียมอาร์กิวเมนต์เริ่มต้นให้ ENTRYPOINT ซึ่งผู้ใช้สามารถ override ได้",
+      "CMD เตรียมอาร์กิวเมนต์เริ่มต้นให้ ENTRYPOINT ซึ่งผู้ใช้สามารถ override ได้",
       "CMD กำหนด working directory ให้โปรเซส ENTRYPOINT",
-      "CMD จัดเตรียม executable สำรองหาก ENTRYPOINT ล้มเหลว"
+      "CMD เตรียม executable สำรองหาก ENTRYPOINT ล้มเหลว"
     ],
     answer: 1
   }

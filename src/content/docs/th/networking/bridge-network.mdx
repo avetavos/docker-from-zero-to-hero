@@ -1,6 +1,6 @@
 ---
-title: 'เครือข่าย Bridge เริ่มต้น'
-description: 'วิธีการทำงานของ default bridge network, IP ของ container, การแยกเครือข่าย และเหตุใดจึงไม่มี DNS'
+title: 'network Bridge เริ่มต้น'
+description: 'วิธีการทำงานของ default bridge network, IP ของ container, การแยก network และเหตุใดจึงไม่มี DNS'
 sidebar:
   order: 2
 ---
@@ -101,6 +101,24 @@ docker stop c1 c2 && docker rm c1 c2`;
 <Callout title="IP ใช้ได้ แต่ชื่อใช้ไม่ได้">
 บน default bridge container สามารถเชื่อมต่อกันผ่าน IP address ได้ การ resolve ชื่อ container ต้องใช้ user-defined network (บทเรียนถัดไป)
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Default bridge (`docker0`) | ใช้งานได้ทันทีโดยไม่ต้องตั้งค่าอะไรเพิ่ม | ไม่มี DNS resolver ในตัว ต้องต่อกันด้วย IP address ล้วน ๆ |
+| User-defined bridge network | มี embedded DNS resolver ให้ resolve ชื่อ container ได้ทันที | ต้องรัน `docker network create` เพิ่มอีกขั้นก่อนใช้งาน |
+| Host network mode | performance สูงสุด ไม่มี NAT overhead ระหว่าง container กับ host | ไม่มี network isolation จาก host เลย container ใช้ network stack เดียวกับ host ตรง ๆ |
+
+## Common Mistakes
+
+- Hardcode IP address ที่ได้จาก `docker inspect` ไว้ใน config เพราะคิดว่า IP จะคงที่ ทั้งที่ IP เปลี่ยนได้ทันทีเมื่อ container ถูก restart หรือสร้างใหม่
+- ใช้งาน default bridge ต่อไปแล้วพยายาม ping container ด้วยชื่อ โดยไม่รู้ว่า default bridge ไม่มี DNS resolver ให้ใช้
+- โยน container จากหลายโปรเจกต์ไว้บน default bridge เดียวกันโดยไม่แยก ทำให้ container ทุกตัวมองเห็นและเข้าถึงกันได้หมดโดยไม่ตั้งใจ
+
+> 💡 Real World Example
+>
+> GitLab CI และ Jenkins ที่รัน Docker executor จะสร้าง bridge network แยกให้แต่ละ job แทนที่จะใช้ default bridge เพื่อให้ container หลักและ service container (เช่น database สำหรับเทส) resolve ชื่อกันได้ผ่าน DNS โดยไม่ชนกับ job อื่นที่รันขนานกันบน runner เดียวกัน
 
 export const quizBridgeNetwork = [
   {

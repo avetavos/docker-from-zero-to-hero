@@ -86,7 +86,7 @@ build ครั้งที่สอง — เปลี่ยนเฉพาะ
 1. `FROM` (base image — แทบไม่เปลี่ยน)
 2. การติดตั้ง system package (`RUN apt-get install ...`)
 3. คัดลอก dependency manifest + ติดตั้ง (`COPY package.json ./` + `RUN npm ci`)
-4. source code ของแอปพลิเคชัน (`COPY . .`)
+4. source code ของ application (`COPY . .`)
 5. ขั้นตอน build ที่ขึ้นกับ source (`RUN npm run build`)
 
 ## ลงมือทำ: สังเกต cache
@@ -111,8 +111,25 @@ CMD ["node", "app.js"]
 <PlayWithDocker client:visible code={layersCacheCode} label="Watch the build cache" />
 
 <Callout title="จัดลำดับ instruction จากเปลี่ยนน้อยที่สุดไปเปลี่ยนบ่อยที่สุด">
-กฎทองคือ: วาง instruction ที่เปลี่ยนน้อย (base image, system package, การติดตั้ง dependency) ไว้ใกล้ส่วนบนของ Dockerfile และวาง instruction ที่เปลี่ยนบ่อย (การคัดลอก source ของแอป) ไว้ใกล้ส่วนล่าง วิธีนี้ทำให้ cache hit ได้มากที่สุดและทำให้การ rebuild เร็ว — บ่อยครั้งจาก 60+ วินาทีลดเหลือต่ำกว่า 2 วินาทีเมื่อมีเพียงโค้ดแอปพลิเคชันที่เปลี่ยน
+กฎทองคือ: วาง instruction ที่เปลี่ยนน้อย (base image, system package, การติดตั้ง dependency) ไว้ใกล้ส่วนบนของ Dockerfile และวาง instruction ที่เปลี่ยนบ่อย (การคัดลอก source ของแอป) ไว้ใกล้ส่วนล่าง วิธีนี้ทำให้ cache hit ได้มากที่สุดและทำให้การ rebuild เร็ว — บ่อยครั้งจาก 60+ วินาทีลดเหลือต่ำกว่า 2 วินาทีเมื่อมีเพียงโค้ด application ที่เปลี่ยน
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| `COPY` แยกไฟล์ทีละกลุ่ม (manifest ก่อน source) | cache แม่นยำ ใช้ซ้ำได้มากที่สุด | ต้องเขียน Dockerfile ระมัดระวังเรื่องลำดับ instruction มากขึ้น |
+| `COPY . .` รวมทีเดียว | เขียนง่าย Dockerfile สั้น | cache เสียง่าย แทบทุกครั้งที่โค้ดเปลี่ยนต้อง rebuild ใหม่หมด |
+
+## Common Mistakes
+
+- `COPY . .` ทั้งโปรเจกต์ก่อน `RUN npm ci` ทำให้ cache เสียทุกครั้งที่โค้ดเปลี่ยน แม้ dependency จะเหมือนเดิม
+- ไม่มี `.dockerignore` ทำให้ checksum ของ build context เปลี่ยนบ่อยเกินจำเป็น cache เสียง่ายขึ้น
+- เรียง instruction ที่เปลี่ยนบ่อย (เช่น คัดลอก source) ไว้บนสุด ทำให้ layer ที่ควรเปลี่ยนน้อยอยู่ใต้มันเสียค่าตามไปด้วย
+
+> 💡 Real World Example
+>
+> Docker Hub official image ของ `node` แยก `COPY package.json` ออกจาก `COPY` source เสมอ เพื่อให้ CI/CD pipeline ที่ build ซ้ำหลายพันครั้งต่อวันใช้ cache ของ dependency layer ซ้ำได้ ประหยัดเวลา build รวมของทั้งองค์กรได้มหาศาล
 
 export const quizLayersCache = [
   {

@@ -21,7 +21,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## สร้าง Network ที่แยกกัน
 
-สร้าง network สองเครือข่ายสำหรับ frontend และ backend:
+สร้าง network สอง network สำหรับ frontend และ backend:
 
 ```bash
 docker network create frontend-net
@@ -103,6 +103,23 @@ docker network rm frontend-net backend-net`;
 <Callout title="แยก service ด้วย network ที่แตกต่างกัน">
 วาง application แต่ละชั้น (frontend, backend, database) บน network ของตัวเอง เชื่อมต่อเฉพาะ container ที่ต้องสื่อสารกัน วิธีนี้จำกัดผลกระทบหากเกิดการละเมิดและเป็นการปรับปรุงความปลอดภัยที่ไม่มีค่าใช้จ่าย
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| รวม container ทั้งหมดไว้บน network เดียว | ตั้งค่าเร็ว ไม่ต้องคิดเรื่อง network topology | container ทุกตัวมองเห็นและเข้าถึงกันได้หมด เพิ่มพื้นที่การโจมตีโดยไม่จำเป็น |
+| แยก network ตาม tier (frontend/backend/data) | จำกัดการสื่อสารเฉพาะที่จำเป็น ลดผลกระทบหากมี container ถูก compromise | ต้องบริหารจัดการหลาย network และ connect/disconnect container เอง |
+
+## Common Mistakes
+
+- ใส่ container ที่ไม่เกี่ยวข้องกันทั้งหมดไว้บน network เดียว (หรือปล่อยไว้บน default bridge) ทำให้ database ถูกเข้าถึงได้จาก container ไหนก็ได้ที่รันอยู่บนเครื่องเดียวกัน
+- ลืมว่า `docker network connect` เชื่อม container เข้ากับ network เพิ่มได้ แต่ต้อง `docker network disconnect` ออกเองด้วยเหมือนกัน ไม่ได้หลุดออกเองเมื่อ container หยุดทำงาน
+- ใช้ network เดียวกันสำหรับทุก environment (dev/staging/prod) ทำให้ container จากคนละ environment ปนกันโดยไม่ได้ตั้งใจ
+
+> 💡 Real World Example
+>
+> Docker Compose สร้าง user-defined network แยกให้แต่ละโปรเจกต์โดยอัตโนมัติ (ตั้งชื่อตาม project directory เช่น `myapp_default`) เพื่อให้ service ในโปรเจกต์หนึ่งไม่ชนหรือมองเห็น container ของอีกโปรเจกต์บนเครื่อง dev เดียวกัน — เป็น pattern มาตรฐานสำหรับ multi-project local development
 
 export const quizCustomNetworks = [
   {

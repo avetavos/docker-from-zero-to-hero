@@ -20,7 +20,7 @@ Host filesystem:         /home/user/myapp/src
 Container filesystem:    /app/src
 ```
 
-การเปลี่ยนแปลงใดๆ ที่เกิดขึ้นฝั่ง host จะมองเห็นได้ทันทีภายใน container และในทางกลับกันด้วย ทำให้ bind mounts เหมาะสำหรับการพัฒนา: editor ของคุณแก้ไขไฟล์บน host และกระบวนการที่รันอยู่ภายใน container เห็นการอัปเดตทันที — ไม่ต้อง rebuild
+การเปลี่ยนแปลงใดๆ ที่เกิดขึ้นฝั่ง host จะมองเห็นได้ทันทีภายใน container และในทางกลับกันด้วย ทำให้ bind mounts เหมาะสำหรับการพัฒนา: editor ของคุณแก้ไขไฟล์บน host และ process ที่รันอยู่ภายใน container เห็นการอัปเดตทันที — ไม่ต้อง rebuild
 
 ## Syntax
 
@@ -60,7 +60,7 @@ docker run -d --name dev-server \
   node /app/src/server.js
 ```
 
-ตอนนี้แก้ไข `src/server.js` บน host ของคุณ ถ้ากระบวนการภายใน container ดู filesystem อยู่ (เช่น ด้วย `nodemon`) มันจะ restart อัตโนมัติ ไม่จำเป็นต้อง rebuild image สำหรับการเปลี่ยนแปลง code ทุกครั้ง
+ตอนนี้แก้ไข `src/server.js` บน host ของคุณ ถ้า process ภายใน container ดู filesystem อยู่ (เช่น ด้วย `nodemon`) มันจะ restart อัตโนมัติ ไม่จำเป็นต้อง rebuild image สำหรับการเปลี่ยนแปลง code ทุกครั้ง
 
 ## Read-only bind mounts
 
@@ -107,6 +107,23 @@ rm -rf /tmp/bindtest`
 <Callout title="Bind mounts map host path — เหมาะสำหรับ dev แต่ผูกกับ layout ของ host">
 Bind mounts มีประสิทธิภาพสำหรับการพัฒนาในเครื่องเพราะการเปลี่ยนแปลงบน host ปรากฏทันทีใน container อย่างไรก็ตาม host path ต้องมีอยู่จริงและต้องเหมือนกันบนทุกเครื่องที่รัน container สำหรับการ deploy ใน production ที่ต้องการ portability ให้เลือกใช้ named volumes แทน
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Bind mount | แก้ไขไฟล์บน host แล้วเห็นผลใน container ทันที เหมาะกับ live reload ตอนพัฒนา | ผูกกับ layout ของ host เครื่องนั้น ย้ายไป host อื่นต้องมี path เดียวกัน |
+| Named volume | Docker จัดการพื้นที่จัดเก็บให้ พกพาข้าม host ได้ | ต้องเข้า container เพื่อดูไฟล์ ไม่สามารถเปิดด้วย editor บน host ได้ตรงๆ |
+
+## Common Mistakes
+
+- ใช้ bind mount เก็บข้อมูลฐานข้อมูลใน production แทนที่จะใช้ named volume ทำให้ deploy ไป host อื่นแล้ว path ไม่ตรงกัน ข้อมูลหาย
+- ลืมว่า bind mount เขียนทับสิทธิ์ไฟล์ (permission) ตาม user ของ container ทำให้ไฟล์บน host เปลี่ยนเจ้าของโดยไม่ตั้งใจ
+- Mount ทั้งไดเรกทอรี `node_modules` จาก host เข้า container ทำให้ dependency ที่ build บน host คนละ OS ขัดแย้งกับที่ต้องใช้ใน container
+
+> 💡 Real World Example
+>
+> official Postgres และ MySQL image แนะนำ named volume สำหรับ `/var/lib/postgresql/data` หรือ `/var/lib/mysql` เสมอ ไม่ใช่ bind mount เพราะ production ต้องการความสามารถพกพาที่ bind mount ให้ไม่ได้ bind mount เหมาะกับ source code ตอน dev เท่านั้น
 
 export const quizBindMounts = [
   {

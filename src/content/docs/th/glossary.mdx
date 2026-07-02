@@ -1,0 +1,76 @@
+---
+title: Glossary
+description: คำศัพท์ Docker ที่ใช้ตลอด course นี้ — รักษา terminology ภาษาอังกฤษตามที่ developer ใช้จริง
+sidebar:
+  order: 99
+---
+
+import Callout from '../../../components/Callout.astro';
+import ProgressTracker from '../../../components/ProgressTracker.tsx';
+
+## Container & Image
+
+| English | Thai Style | หมายเหตุ |
+|---------|-----------|---------|
+| container | container | หน่วยรันโปรแกรมที่แยก process, filesystem และ network ออกจาก host โดยแชร์ kernel เดียวกัน |
+| image | image | template แบบ read-only ที่ใช้สร้าง container |
+| Dockerfile | Dockerfile | ไฟล์ instruction สำหรับ build image |
+| layer | layer | ชั้นของ filesystem diff ที่ประกอบกันเป็น image |
+| registry | registry | ที่เก็บและแจกจ่าย image เช่น Docker Hub, GHCR, ECR |
+| tag | tag | label ระบุเวอร์ชันของ image เช่น `node:20-alpine` |
+
+## Networking
+
+| English | Thai Style | หมายเหตุ |
+|---------|-----------|---------|
+| service | service | หน่วยงานหนึ่งใน Compose ที่ map ไปยัง container (หรือหลาย replica) |
+| port | port | หมายเลขที่ process รับ connection; publish คือการ map port ของ container ออกสู่ host |
+| network | network | virtual network ที่ Docker สร้างให้ container สื่อสารกัน |
+| host | host | เครื่องจริง (หรือ VM) ที่รัน Docker daemon |
+| bridge | bridge | network driver เริ่มต้นสำหรับ single-host networking |
+| DNS | DNS | ระบบ resolve ชื่อ service/container เป็น IP ภายใน network เดียวกัน |
+
+## Runtime & OS
+
+| English | Thai Style | หมายเหตุ |
+|---------|-----------|---------|
+| kernel | kernel | แกนกลางของ OS ที่ container ทุกตัวบน host เดียวกันแชร์ร่วมกัน |
+| hypervisor | hypervisor | ชั้นที่ VM ใช้จำลองฮาร์ดแวร์ — container ไม่มีชั้นนี้ |
+| VM | VM (เครื่องเสมือน) | "เครื่องเสมือน" ใช้ได้ตามธรรมชาติ แต่ตัวย่อ VM เป็นที่นิยมกว่าในบทสนทนา |
+| process | process (กระบวนการ — context-check) | ใช้ "process" เมื่อหมายถึง OS process ที่รันใน container; ใช้ "เวิร์กโฟลว์/ขั้นตอน" เมื่อหมายถึงกระบวนการทำงานของทีม |
+| namespace | namespace | กลไก kernel Linux ที่แยก view ของ process, network, filesystem ต่อ container |
+| cgroup | cgroup | กลไก kernel Linux ที่จำกัด resource (CPU, memory) ต่อ container |
+
+## Compose & Data
+
+| English | Thai Style | หมายเหตุ |
+|---------|-----------|---------|
+| Compose | Compose | เครื่องมือกำหนด multi-container application แบบ declarative ด้วย `compose.yaml` |
+| volume | volume | พื้นที่เก็บข้อมูลที่ Docker จัดการเอง อยู่รอดแม้ container ถูกลบ |
+| bind mount | bind mount | mount path จาก host ตรง ๆ เข้า container |
+| environment variable | environment variable | ค่า config ที่ส่งเข้า container ผ่าน `-e` หรือ `environment:` |
+| cache | cache | ทั้ง build cache ของ Docker layer และ cache service ทั่วไป (เช่น Redis) |
+| database | ฐานข้อมูล | คำนี้เป็น natural Thai ที่ developer ไทยใช้ปกติ — ไม่ต้องบังคับเป็น "database" |
+
+## เมื่อ **ไม่** ควรใช้ literal Thai translation
+
+| หลีกเลี่ยง | ใช้แทน |
+|------------|--------|
+| คอนเทนเนอร์ | container |
+| เซอร์วิส | service |
+| พอร์ต | port |
+| โฮสต์ | host |
+| เคอร์เนล | kernel |
+| อิมเมจ | image |
+| ไฮเปอร์ไวเซอร์ | hypervisor |
+| เครือข่าย | network |
+| แอปพลิเคชัน | application / แอป |
+| สภาพแวดล้อม | environment |
+| เซิร์ฟเวอร์ | server |
+| แคช | cache |
+
+<Callout title="ทำไมคำเหล่านี้ไม่แปลเป็นไทยทั้งหมด">
+Developer ไทยที่ทำงานกับ Docker จริงในทีมพูด "container", "image", "port", "service" เป็นภาษาอังกฤษปนกับประโยคไทยตลอดเวลา — การบังคับแปลเป็น "คอนเทนเนอร์" หรือ "พอร์ต" ทำให้อ่านขัดและไม่ตรงกับที่ใช้จริงในที่ทำงาน คำที่เป็น natural Thai อยู่แล้ว เช่น "ฐานข้อมูล" ยังคงไว้ตามเดิม ส่วนคำที่ context-sensitive อย่าง "กระบวนการ" ต้องดูบริบทว่าหมายถึง OS process หรือ workflow ก่อนตัดสินใจว่าจะใช้คำไทยหรือคำอังกฤษ
+</Callout>
+
+<ProgressTracker client:visible id="th/glossary" />

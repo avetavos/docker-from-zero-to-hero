@@ -1,6 +1,6 @@
 ---
 title: 'Registry, CI & Deploy — ภาพรวมโมดูล'
-description: 'เรียนรู้การเดินทางของ Docker image ตั้งแต่เครื่องของคุณไปยัง registry และสู่เซิร์ฟเวอร์จริง: build, tag, push, pull, และ deploy'
+description: 'เรียนรู้การเดินทางของ Docker image ตั้งแต่เครื่องของคุณไปยัง registry และสู่ server จริง: build, tag, push, pull, และ deploy'
 sidebar:
   order: 1
 ---
@@ -12,7 +12,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## Container registry คืออะไร?
 
-เมื่อคุณ build Docker image แล้ว image นั้นจะอยู่แค่บนเครื่องของคุณเท่านั้น **Registry** คือเซิร์ฟเวอร์ที่ทำหน้าที่จัดเก็บและแจกจ่าย image เพื่อให้เครื่องอื่น ๆ — CI runner, cloud server, หรือเครื่องของเพื่อนร่วมทีม — สามารถ pull และรัน image เดียวกันได้
+เมื่อคุณ build Docker image แล้ว image นั้นจะอยู่แค่บนเครื่องของคุณเท่านั้น **Registry** คือ server ที่ทำหน้าที่จัดเก็บและแจกจ่าย image เพื่อให้เครื่องอื่น ๆ — CI runner, cloud server, หรือเครื่องของเพื่อนร่วมทีม — สามารถ pull และรัน image เดียวกันได้
 
 ขั้นตอนมีอยู่เสมอสามขั้นตอนเดิม:
 
@@ -74,7 +74,7 @@ docker images nginx`;
 <PlayWithDocker client:visible code={registryPullCode} label="Pull a public image" />
 
 <Callout title="Registry ทำหน้าที่จัดเก็บและแจกจ่าย image">
-ให้นึกถึง registry เหมือน Git hosting service แต่สำหรับ Docker image คุณ push image จากเครื่อง build แล้ว pull ลงบนเซิร์ฟเวอร์ใด ๆ ที่ต้องการรัน Docker Hub คือ registry สาธารณะค่าเริ่มต้น ส่วน GHCR, ECR, และ GAR เป็นตัวเลือกยอดนิยมสำหรับงาน private หรือ cloud-native
+ให้นึกถึง registry เหมือน Git hosting service แต่สำหรับ Docker image คุณ push image จากเครื่อง build แล้ว pull ลงบน server ใด ๆ ที่ต้องการรัน Docker Hub คือ registry สาธารณะค่าเริ่มต้น ส่วน GHCR, ECR, และ GAR เป็นตัวเลือกยอดนิยมสำหรับงาน private หรือ cloud-native
 </Callout>
 
 export const quizIndex = [

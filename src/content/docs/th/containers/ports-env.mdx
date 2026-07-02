@@ -1,6 +1,6 @@
 ---
-title: 'พอร์ตและตัวแปร Environment'
-description: 'เผยแพร่พอร์ตของ container ด้วย -p, ส่ง configuration ผ่าน -e และ --env-file, และตั้งชื่อ container ด้วย --name'
+title: 'port และตัวแปร Environment'
+description: 'เผยแพร่ port ของ container ด้วย -p, ส่ง configuration ผ่าน -e และ --env-file, และตั้งชื่อ container ด้วย --name'
 sidebar:
   order: 4
 ---
@@ -10,17 +10,17 @@ import Callout from '../../../../components/Callout.astro';
 import Quiz from '../../../../components/Quiz.tsx';
 import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
-## การเผยแพร่พอร์ตด้วย `-p`
+## การเผยแพร่ port ด้วย `-p`
 
-โดยค่าเริ่มต้น container ถูกแยกออกอย่างสมบูรณ์ — พอร์ตของมันไม่สามารถเข้าถึงได้จาก host flag `-p` **เผยแพร่** พอร์ต โดยสร้าง mapping ระหว่างพอร์ต host กับพอร์ต container:
+โดยค่าเริ่มต้น container ถูกแยกออกอย่างสมบูรณ์ — port ของมันไม่สามารถเข้าถึงได้จาก host flag `-p` **เผยแพร่** port โดยสร้าง mapping ระหว่าง port host กับ port container:
 
 ```bash
 docker run -d -p 8080:80 nginx:alpine
 ```
 
-รูปแบบคือ `-p <host-port>:<container-port>` หลังจากคำสั่งนี้ การเปิด `http://localhost:8080` ในเบราว์เซอร์จะเข้าถึงพอร์ต 80 ภายใน container
+รูปแบบคือ `-p <host-port>:<container-port>` หลังจากคำสั่งนี้ การเปิด `http://localhost:8080` ในเบราว์เซอร์จะเข้าถึง port 80 ภายใน container
 
-คุณสามารถเผยแพร่หลายพอร์ตได้:
+คุณสามารถเผยแพร่หลาย port ได้:
 
 ```bash
 docker run -d -p 8080:80 -p 8443:443 nginx:alpine
@@ -110,11 +110,28 @@ docker exec webserver env | grep NGINX
 # Clean up
 docker stop webserver && docker rm webserver`;
 
-<PlayWithDocker client:visible code={portsEnvCode} label="รัน nginx พร้อมพอร์ตและตัวแปร env" />
+<PlayWithDocker client:visible code={portsEnvCode} label="รัน nginx พร้อม port และตัวแปร env" />
 
 <Callout title="-p 8080:80 map host 8080 ไปยัง container 80">
-หากไม่มี `-p` พอร์ต container จะอยู่เฉพาะภายในเครือข่ายภายในของ Docker — เบราว์เซอร์และ `curl` บน host ไม่สามารถเข้าถึงได้ mapping `-p 8080:80` หมายความว่า: traffic ที่มาถึงพอร์ต 8080 บน host จะถูกส่งต่อไปยังพอร์ต 80 ภายใน container
+หากไม่มี `-p` port container จะอยู่เฉพาะภายใน network ภายในของ Docker — เบราว์เซอร์และ `curl` บน host ไม่สามารถเข้าถึงได้ mapping `-p 8080:80` หมายความว่า: traffic ที่มาถึง port 8080 บน host จะถูกส่งต่อไปยัง port 80 ภายใน container
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| bind เฉพาะ `127.0.0.1` (`-p 127.0.0.1:8080:80`) | ปลอดภัยกว่า เข้าถึงได้เฉพาะจาก host เดียวกัน | เข้าถึงจากเครื่องอื่นในเครือข่ายไม่ได้ ต้องตั้งค่าเพิ่มถ้าจะแชร์ |
+| bind ทุก interface (`-p 8080:80`) | เข้าถึงได้จากเครือข่ายภายนอกทันที ใช้งานง่าย | เปิดกว้างเกินไป เสี่ยงถูกเข้าถึงโดยไม่ตั้งใจถ้าไม่มี firewall คุม |
+
+## Common Mistakes
+
+- hardcode ค่า config อย่าง DB password หรือ host ไว้ใน Dockerfile ด้วย `ENV` แทนที่จะส่งผ่าน `-e`/`--env-file` ตอนรัน ทำให้เปลี่ยนค่าทุกครั้งต้อง build image ใหม่
+- commit ไฟล์ `.env` ที่มี secret จริงเข้า git แทนที่จะใช้ `.env.example` เป็น template
+- ลืมเผยแพร่ port ด้วย `-p` แล้วสงสัยว่าทำไม `curl` จาก host ถึงขึ้น connection refused ทั้งที่ container ทำงานปกติดี
+
+> 💡 Real World Example
+>
+> Kubernetes ใช้ ConfigMap และ Secret เพื่อฉีดค่า configuration เข้า Pod ตอน runtime ซึ่งเป็นแนวคิดเดียวกับ `-e`/`--env-file` ของ Docker เพียงแต่จัดการแบบรวมศูนย์และหมุนเวียนค่าได้ในระดับ cluster
 
 export const quizPortsEnv = [
   {
@@ -122,8 +139,8 @@ export const quizPortsEnv = [
     options: [
       "Host port 8080 map ไปยัง container port 3000",
       "Host port 3000 map ไปยัง container port 8080",
-      "ทั้งพอร์ต 3000 และ 8080 ถูกเปิดบน host",
-      "Container รับฟังทุกพอร์ตระหว่าง 3000 ถึง 8080"
+      "ทั้ง port 3000 และ 8080 ถูกเปิดบน host",
+      "Container รับฟังทุก port ระหว่าง 3000 ถึง 8080"
     ],
     answer: 1
   },
@@ -138,11 +155,11 @@ export const quizPortsEnv = [
     answer: 2
   },
   {
-    q: "ถ้ารัน container โดยไม่มี -p สามารถเข้าถึงพอร์ตจาก host ได้หรือไม่?",
+    q: "ถ้ารัน container โดยไม่มี -p สามารถเข้าถึง port จาก host ได้หรือไม่?",
     options: [
-      "ได้ — พอร์ต container ทั้งหมดเข้าถึงได้เสมอ",
-      "ได้ — แต่เฉพาะพอร์ต 80",
-      "ไม่ได้ — พอร์ตเข้าถึงได้เฉพาะภายในเครือข่ายภายในของ Docker",
+      "ได้ — port container ทั้งหมดเข้าถึงได้เสมอ",
+      "ได้ — แต่เฉพาะ port 80",
+      "ไม่ได้ — port เข้าถึงได้เฉพาะภายใน network ภายในของ Docker",
       "ได้เฉพาะเมื่อ container ใช้ EXPOSE ใน Dockerfile"
     ],
     answer: 2
@@ -152,7 +169,7 @@ export const quizPortsEnv = [
     options: [
       "ทำให้ container เริ่มต้นเร็วขึ้น",
       "ให้ชื่อที่คาดเดาได้สำหรับใช้ในคำสั่งถัดไป",
-      "เผยแพร่ทุกพอร์ตอัตโนมัติ",
+      "เผยแพร่ทุก port อัตโนมัติ",
       "ป้องกันไม่ให้ container ถูกลบ"
     ],
     answer: 1

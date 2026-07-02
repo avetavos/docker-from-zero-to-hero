@@ -140,6 +140,23 @@ CMD ["cat", "version.txt"]
 การพึ่งพา `latest` ใน production เป็นเรื่องเสี่ยง — การ push ใหม่อาจเปลี่ยนสิ่งที่ container ของคุณรันโดยเงียบ ๆ ได้ ให้ tag image ด้วยเลขเวอร์ชันหรือ git commit SHA เสมอ (เช่น `myapp:1.4.2` หรือ `myapp:abc1234`) และอ้างอิงถึง tag ที่แน่นอนนั้นใน deployment manifest และไฟล์ Compose ของคุณ
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| alpine base image | image เล็ก, pull เร็ว | ใช้ musl libc ทำให้บาง native binary หรือ npm package compile ไม่ผ่านหรือพังตอน runtime |
+| debian/full base image | มี tool ครบ, compatibility กับ glibc สูง | image ใหญ่กว่ามาก, push/pull ช้าลง |
+
+## Common Mistakes
+
+- ลืม pin tag ของ image (ปล่อยให้เป็น `latest` หรือไม่ใส่ tag เลย) ทำให้ build วันนี้กับพรุ่งนี้ได้ image คนละตัว
+- ไม่มีไฟล์ `.dockerignore` ทำให้ build context บวมและ build ช้าลง แถมเสี่ยง secret หลุดเข้าไปใน image
+- สั่ง `docker build` โดยไม่ใส่ `-t` เลย ได้ image ที่ไม่มีชื่อ ต้องมาไล่หาด้วย image ID ทีหลัง
+
+> 💡 Real World Example
+>
+> Docker Hub official image อย่าง `node` หรือ `postgres` publish หลาย tag พร้อมกัน (เช่น `22`, `22-alpine`, `22-slim`) และ build แบบ multi-arch (amd64/arm64) เพื่อให้ทีม production เลือก pin tag ที่เหมาะกับงานได้ตรงจุด
+
 export const quizBuildTag = [
   {
     q: "build context ใน `docker build .` คืออะไร?",
@@ -167,7 +184,7 @@ export const quizBuildTag = [
       "เพื่อป้องกัน Docker ไม่ให้อ่าน Dockerfile",
       "เพื่อระบุรายการ image ที่ไม่ควร pull จาก Docker Hub",
       "เพื่อกีดกันไฟล์ออกจาก build context ช่วยเร่งความเร็วการ build และป้องกันไม่ให้ secret ถูกคัดลอกเข้าไป",
-      "เพื่อกำหนดว่าพอร์ตใดบ้างที่ EXPOSE จะละเว้น"
+      "เพื่อกำหนดว่า port ใดบ้างที่ EXPOSE จะละเว้น"
     ],
     answer: 2
   },

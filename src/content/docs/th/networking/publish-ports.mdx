@@ -1,6 +1,6 @@
 ---
-title: 'การ Publish และ Expose พอร์ต'
-description: 'วิธีทำให้พอร์ตของ container เข้าถึงได้จาก host ด้วย -p และทำไม EXPOSE เพียงอย่างเดียวจึงไม่พอ'
+title: 'การ Publish และ Expose port'
+description: 'วิธีทำให้ port ของ container เข้าถึงได้จาก host ด้วย -p และทำไม EXPOSE เพียงอย่างเดียวจึงไม่พอ'
 sidebar:
   order: 4
 ---
@@ -12,11 +12,11 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## EXPOSE กับ -p ต่างกันอย่างไร
 
-Dockerfile ของคุณอาจมีบรรทัดเช่น `EXPOSE 80` สิ่งนี้บอกผู้อ่าน (และเครื่องมือ) ว่า application ภายใน container ฟังที่พอร์ต 80 แต่ **ไม่ได้ publish พอร์ตนั้นสู่ภายนอก**
+Dockerfile ของคุณอาจมีบรรทัดเช่น `EXPOSE 80` สิ่งนี้บอกผู้อ่าน (และเครื่องมือ) ว่า application ภายใน container ฟังที่ port 80 แต่ **ไม่ได้ publish port นั้นสู่ภายนอก**
 
-หากต้องการให้ host หรือโลกภายนอกสามารถเข้าถึงพอร์ตของ container ได้จริง คุณต้องใช้ flag `-p` (หรือ `--publish`) เมื่อรัน container
+หากต้องการให้ host หรือโลกภายนอกสามารถเข้าถึง port ของ container ได้จริง คุณต้องใช้ flag `-p` (หรือ `--publish`) เมื่อรัน container
 
-## Syntax การ Publish พอร์ต
+## Syntax การ Publish port
 
 รูปแบบพื้นฐานคือ `-p <host-port>:<container-port>`:
 
@@ -85,8 +85,25 @@ docker stop webserver local-only multi && docker rm webserver local-only multi`;
 <PlayWithDocker client:visible code={publishPortsCode} label="ทดสอบการ publish port" />
 
 <Callout title="EXPOSE คือเอกสาร, -p คือการผูก port จริง">
-EXPOSE ใน Dockerfile บอกผู้อ่านว่า application ใช้พอร์ตใด แต่ไม่ได้ publish จริง มีเพียง -p (หรือ ports: ใน Compose) เท่านั้นที่ทำให้พอร์ตเข้าถึงได้จากภายนอก container
+EXPOSE ใน Dockerfile บอกผู้อ่านว่า application ใช้ port ใด แต่ไม่ได้ publish จริง มีเพียง -p (หรือ ports: ใน Compose) เท่านั้นที่ทำให้ port เข้าถึงได้จากภายนอก container
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Publish ไปที่ `0.0.0.0` (ทุก interface) | เข้าถึงได้จากทุกเครื่องในเครือข่าย เหมาะกับ service ที่ต้องเปิดสู่ภายนอกจริง | เปิดช่องเข้าถึงกว้างเกินจำเป็นถ้า service นั้นควรใช้แค่ภายในเครื่อง |
+| Publish ไปที่ `127.0.0.1` เท่านั้น | จำกัดการเข้าถึงเฉพาะจาก host เดียวกัน ปลอดภัยกว่า | เข้าถึงจากเครื่องอื่นในเครือข่ายไม่ได้เลย ต้องแก้ flag ถ้าจะเปิดออกภายหลัง |
+
+## Common Mistakes
+
+- เข้าใจผิดว่า `EXPOSE` ใน Dockerfile publish port ออกมาจริง ทั้งที่มันเป็นแค่เอกสารบอกว่า container ฟัง port ไหน ต้องใช้ `-p`/`--publish` เท่านั้นถึงจะ map port ออกมาให้เข้าถึงได้จริง
+- Publish port ไปที่ `0.0.0.0` โดยไม่ตั้งใจสำหรับ service ที่ควรเข้าถึงได้แค่จาก localhost เช่น database หรือ admin panel ทำให้เปิดสู่เครือข่ายภายนอกโดยไม่จำเป็น
+- Publish port เดียวกันซ้ำจากหลาย container บน host เดียว ทำให้ `docker run` ล้มเหลวเพราะ port ถูกจองไปแล้วโดย container ตัวอื่น
+
+> 💡 Real World Example
+>
+> Pattern ทั่วไปในการ deploy คือ publish port แค่จาก reverse proxy ตัวเดียว (เช่น Traefik หรือ nginx) ที่ `0.0.0.0:80` และ `0.0.0.0:443` ส่วน backend service อื่น ๆ ไม่ publish port เลย แต่คุยกันผ่าน internal network ภายใน ทำให้พื้นที่ที่เปิดสู่ภายนอกมีแค่จุดเดียว
 
 export const quizPublishPorts = [
   {

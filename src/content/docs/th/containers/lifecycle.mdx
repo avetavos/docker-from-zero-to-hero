@@ -85,7 +85,7 @@ docker rm -f webserver
 
 ## การทำความสะอาดอัตโนมัติด้วย `--rm`
 
-สำหรับงานที่ทำครั้งเดียวและไม่ต้องการจัดการด้วยตนเอง ให้เพิ่ม `--rm` Container จะถูกลบอัตโนมัติทันทีที่กระบวนการสิ้นสุด
+สำหรับงานที่ทำครั้งเดียวและไม่ต้องการจัดการด้วยตนเอง ให้เพิ่ม `--rm` Container จะถูกลบอัตโนมัติทันทีที่ process สิ้นสุด
 
 ```bash
 docker run --rm alpine echo "Hello, Docker!"
@@ -124,9 +124,26 @@ docker run --rm alpine echo "done — already gone"`;
 `docker stop` หยุด container เท่านั้น — ไม่ได้ลบมัน container ที่หยุดแล้วสะสมอยู่บนดิสก์ (แต่ละตัวมี writable layer) ใช้ `docker rm` เมื่อใช้งานเสร็จ หรือส่ง `--rm` ตอนรันเพื่อให้ Docker ลบ container อัตโนมัติเมื่อออก
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| รันแบบ foreground (ไม่ใส่ `-d`) | เห็น log แบบ real-time ทันทีที่รัน กด `Ctrl+C` หยุดได้ง่าย | terminal ถูก block ใช้งานอย่างอื่นไม่ได้จนกว่าจะหยุด |
+| รันแบบ detached (`-d`) | terminal ว่างใช้งานต่อได้ รันหลาย container พร้อมกันสะดวก | ต้องเปิด `docker logs` เองถึงจะเห็น output และลืมง่ายว่ามี container ทำงานอยู่เบื้องหลัง |
+
+## Common Mistakes
+
+- รัน container โดยลืมใส่ `-d` แล้ว terminal ถูก block โดยไม่ตั้งใจ ต้องเปิด terminal ใหม่มาทำงานต่อ
+- `docker stop` แล้วเข้าใจผิดว่า container หายไปแล้ว ทั้งที่จริงยังอยู่บนดิสก์ในสถานะหยุด ลืม `docker rm` ตามไปเรื่อยๆ จนสะสม
+- `docker restart` พร่ำเพรื่อทันทีที่เจอปัญหา โดยไม่เช็ค `docker logs` ก่อนว่า container crash เพราะอะไร ทำให้วนแก้ปัญหาเดิมซ้ำ
+
+> 💡 Real World Example
+>
+> แนวคิด `restartPolicy` ของ Kubernetes Pod (`Always`, `OnFailure`, `Never`) คือ idea เดียวกับ `docker restart` ที่ทำเอง เพียงแต่ Kubernetes จัดการวงจรชีวิตของ container ให้อัตโนมัติในระดับ cluster แทนที่จะให้คนคอยรันคำสั่งเอง
+
 export const quizLifecycle = [
   {
-    q: "'docker stop' ส่ง signal อะไรไปยังกระบวนการหลักของ container เป็นอันดับแรก?",
+    q: "'docker stop' ส่ง signal อะไรไปยัง process หลักของ container เป็นอันดับแรก?",
     options: [
       "SIGKILL",
       "SIGTERM",
@@ -149,7 +166,7 @@ export const quizLifecycle = [
     q: "flag --rm ทำหน้าที่อะไร?",
     options: [
       "ลบ image หลังจาก container ออก",
-      "ลบ container อัตโนมัติเมื่อกระบวนการสิ้นสุด",
+      "ลบ container อัตโนมัติเมื่อ process สิ้นสุด",
       "บังคับให้ container รีสตาร์ทเมื่อเกิดข้อผิดพลาด",
       "ลบ container ที่หยุดทั้งหมดก่อนรันตัวใหม่"
     ],

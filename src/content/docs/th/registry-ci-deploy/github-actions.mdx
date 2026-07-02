@@ -104,7 +104,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
 ```
 
-`GITHUB_TOKEN` ถูกจัดเตรียมโดย GitHub Actions โดยอัตโนมัติ — ไม่ต้องสร้าง secret ด้วยมือ
+`GITHUB_TOKEN` ถูกเตรียมโดย GitHub Actions โดยอัตโนมัติ — ไม่ต้องสร้าง secret ด้วยมือ
 
 ## สิ่งที่ `metadata-action` สร้างออกมา
 
@@ -132,6 +132,24 @@ acme/api-server:sha-abc1234
 <Callout title="เก็บ registry credentials เป็น encrypted CI secrets ห้ามใส่ใน repo">
 เพิ่ม `DOCKERHUB_TOKEN` (หรือเทียบเท่า) เป็น encrypted Actions secret แล้วอ้างอิงผ่าน `${{ secrets.DOCKERHUB_TOKEN }}` ใน workflow YAML GitHub จะซ่อนค่านี้ใน log ทั้งหมด การ commit credentials โดยตรงใน workflow file หรือ Dockerfile เปิดเผยให้ทุกคนที่เข้าถึง repository ได้เห็น และเป็นเหตุการณ์ security ร้ายแรง
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Push ไป Docker Hub ด้วย `login-action` | Ecosystem ใหญ่ pull ได้จากทุกที่ | ต้องสร้างและหมุนเวียน `DOCKERHUB_TOKEN` เอง และผูกกับ rate limit ของ Docker Hub |
+| Push ไป GHCR ด้วย `GITHUB_TOKEN` | ไม่ต้องสร้าง secret เพิ่ม permission ผูกกับ repository โดยอัตโนมัติ | Token มีอายุแค่ในระหว่าง job ใช้ pull นอก workflow ไม่ได้ตรง ๆ และผูกกับ GitHub เป็นหลัก |
+
+## Common Mistakes
+
+- Hardcode credentials ไว้ตรง ๆ ใน workflow YAML แทนที่จะอ้างอิงผ่าน `secrets.*`
+- ใช้รหัสผ่านธรรมดาแทน access token ใน `docker/login-action`
+- ไม่จำกัด `permissions:` ของ job ทำให้ `GITHUB_TOKEN` มีสิทธิ์กว้างเกินความจำเป็น
+- ฝัง credentials ไว้ใน Dockerfile layer (เช่น ผ่าน `ARG` ที่มี token) แทนที่จะใช้ BuildKit build secrets
+
+> 💡 Real World Example
+>
+> `docker/build-push-action` เป็น GitHub Action มาตรฐานที่ทีมทั่ววงการใช้ build และ push image ใน CI แทบทุก workflow ที่เกี่ยวกับ Docker บน GitHub Actions จะพึ่งพา action ตัวนี้ร่วมกับ `setup-buildx-action` และ `metadata-action`
 
 export const quizGithubActions = [
   {

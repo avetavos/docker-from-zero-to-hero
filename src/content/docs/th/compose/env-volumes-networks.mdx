@@ -12,7 +12,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## Environment variables ใน Compose
 
-มีสองวิธีในการส่ง environment variables เข้าเซอร์วิส
+มีสองวิธีในการส่ง environment variables เข้า service
 
 ### Inline environment
 
@@ -29,7 +29,7 @@ services:
 
 ### env_file
 
-อ้างอิงไฟล์ภายนอก Compose อ่านแต่ละบรรทัด `KEY=VALUE` จากไฟล์และฉีดเข้าคอนเทนเนอร์:
+อ้างอิงไฟล์ภายนอก Compose อ่านแต่ละบรรทัด `KEY=VALUE` จากไฟล์และฉีดเข้า container:
 
 ```yaml
 services:
@@ -69,13 +69,13 @@ DB_PASSWORD=supersecret
 DB_NAME=mydb
 ```
 
-Compose แทนที่ค่าก่อนสตาร์ทคอนเทนเนอร์ นี่ทำให้ secrets ไม่ต้องอยู่ใน compose.yaml และให้นักพัฒนาแต่ละคนใช้ไฟล์ `.env` ของตนเองได้
+Compose แทนที่ค่าก่อนสตาร์ท container นี่ทำให้ secrets ไม่ต้องอยู่ใน compose.yaml และให้นักพัฒนาแต่ละคนใช้ไฟล์ `.env` ของตนเองได้
 
 ## Named volumes
 
-คอนเทนเนอร์เป็น ephemeral — ข้อมูลที่เขียนภายในคอนเทนเนอร์จะหายเมื่อคอนเทนเนอร์ถูกลบ Named volumes เก็บข้อมูลบน host และอยู่รอดได้แม้คอนเทนเนอร์จะ restart หรือถูก recreate
+container เป็น ephemeral — ข้อมูลที่เขียนภายใน container จะหายเมื่อ container ถูกลบ Named volumes เก็บข้อมูลบน host และอยู่รอดได้แม้ container จะ restart หรือถูก recreate
 
-ประกาศ named volume ที่ระดับบนสุดและ mount ต่อเซอร์วิส:
+ประกาศ named volume ที่ระดับบนสุดและ mount ต่อ service:
 
 ```yaml
 services:
@@ -90,7 +90,7 @@ volumes:
   pgdata:
 ```
 
-key `volumes:` ระดับบนสุด register volume กับ Compose รายการ `volumes:` ต่อเซอร์วิส mount มัน คุณสามารถ mount named volume เดียวกันในหลายเซอร์วิสได้
+key `volumes:` ระดับบนสุด register volume กับ Compose รายการ `volumes:` ต่อ service mount มัน คุณสามารถ mount named volume เดียวกันในหลาย service ได้
 
 ## Custom networks
 
@@ -123,7 +123,7 @@ networks:
 
 ## ลองปฏิบัติจริง
 
-snippet ด้านล่างเชื่อมต่อเซอร์วิสกับ env file และ named volume เพื่อให้ข้อมูลอยู่รอดได้หลัง restart
+snippet ด้านล่างเชื่อมต่อ service กับ env file และ named volume เพื่อให้ข้อมูลอยู่รอดได้หลัง restart
 
 export const envVolNetCode = `# Create .env file
 cat > .env <<'EOF'
@@ -180,12 +180,29 @@ docker compose down -v`;
 <PlayWithDocker client:visible code={envVolNetCode} label="ลอง env vars และ named volumes" />
 
 <Callout title="ค่า .env เติม placeholder variables ใน compose.yaml">
-Compose อ่านไฟล์ `.env` ข้าง compose.yaml อัตโนมัติและแทนที่ placeholder `${VAR}` ตลอดไฟล์ นี่แตกต่างจาก `env_file:` — key นั้นฉีด variables เข้า *container*; การ interpolation ด้วย `.env` เติม placeholder *ใน compose.yaml เอง* ก่อนคอนเทนเนอร์ใดๆ สตาร์ท
+Compose อ่านไฟล์ `.env` ข้าง compose.yaml อัตโนมัติและแทนที่ placeholder `${VAR}` ตลอดไฟล์ นี่แตกต่างจาก `env_file:` — key นั้นฉีด variables เข้า *container*; การ interpolation ด้วย `.env` เติม placeholder *ใน compose.yaml เอง* ก่อน container ใดๆ สตาร์ท
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| `.env` + interpolation | secrets ไม่ต้อง hardcode ใน compose.yaml นักพัฒนาแต่ละคนใช้ค่าตัวเองได้ | ต้องดูแลไฟล์ `.env` เองนอก git และ sync key ให้ตรงกับที่ compose.yaml อ้างอิง |
+| named volume + custom network | ข้อมูลอยู่รอดข้าม restart และแยก traffic ตาม network ได้ชัดเจน | volume/network ผูกกับชื่อ project — ถ้าตั้งชื่อโปรเจกต์ชนกัน อาจ mount ข้อมูลผิดตัว |
+
+## Common Mistakes
+
+- commit ไฟล์ `.env` ที่มี secret จริง (เช่น `DB_PASSWORD`) เข้า git โดยไม่ได้ตั้งใจ ควรใส่ `.env` ใน `.gitignore` เสมอและ commit แค่ `.env.example`
+- ลืมว่า named volume และ network ที่ Compose สร้างให้เป็นแบบ project-scoped (ตั้งชื่อจาก directory) โปรเจกต์ที่ชื่อคล้ายกันอาจสร้าง volume ซ้ำซ้อนโดยไม่รู้ตัว
+- สับสนระหว่าง `environment:` กับ `env_file:` แล้วคาดหวังว่าไฟล์ `.env` จะถูกอ่านเข้า container เองโดยไม่ต้องประกาศ `env_file:` ทั้งที่ interpolation กับ env_file เป็นคนละกลไกกัน
+
+> 💡 Real World Example
+>
+> ทีมที่ทำ CI/CD มักแยก `.env.example` (commit เข้า git เพื่อ document ว่า key ไหนต้องตั้งค่า) ออกจาก `.env` จริงที่เก็บ secret และฉีดเข้าเครื่องผ่าน secret manager หรือ CI variable แทน — pattern เดียวกับที่ทีม dev ใช้ Compose local แล้วส่ง secret จริงผ่าน Kubernetes Secret ตอน deploy production
 
 export const quizEnvVol = [
   {
-    q: "ความแตกต่างระหว่าง environment: และ env_file: ในนิยามเซอร์วิสคืออะไร?",
+    q: "ความแตกต่างระหว่าง environment: และ env_file: ในนิยาม service คืออะไร?",
     options: [
       "environment: กำหนด build-time variables; env_file: กำหนด runtime variables",
       "environment: กำหนด variables inline ใน compose.yaml; env_file: อ่านจากไฟล์ภายนอก",

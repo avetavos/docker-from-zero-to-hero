@@ -50,7 +50,7 @@ docker run --rm alpine sh -c "cat /data/message.txt 2>/dev/null || echo 'File is
 <PlayWithDocker client:visible code={ephemeralCode} label="ดูข้อมูลหายไปเมื่อ docker rm" />
 
 <Callout title="Container เป็น stateless โดยค่าเริ่มต้น">
-ทุก container เริ่มต้นจากสภาพแวดล้อมที่สะอาดซึ่งได้จาก image ของมัน ไฟล์ที่เขียนระหว่างชีวิตของ container หนึ่งจะไม่ถ่ายทอดไปยัง container ถัดไป ใช้ named volumes หรือ bind mounts เมื่อแอปพลิเคชันของคุณต้องอ่านหรือเขียนข้อมูลถาวร — log, uploads, ไฟล์ฐานข้อมูล หรือ configuration
+ทุก container เริ่มต้นจาก environment ที่สะอาดซึ่งได้จาก image ของมัน ไฟล์ที่เขียนระหว่างชีวิตของ container หนึ่งจะไม่ถ่ายทอดไปยัง container ถัดไป ใช้ named volumes หรือ bind mounts เมื่อ application ของคุณต้องอ่านหรือเขียนข้อมูลถาวร — log, uploads, ไฟล์ฐานข้อมูล หรือ configuration
 </Callout>
 
 ## เนื้อหาที่ครอบคลุมในโมดูลนี้

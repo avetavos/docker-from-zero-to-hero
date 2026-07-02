@@ -106,6 +106,23 @@ rm source-vol.tgz`
 รูปแบบ one-liner — `docker run --rm -v vol:/data -v $(pwd):/backup alpine tar czf /backup/data.tgz -C /data .` — เป็นวิธีมาตรฐานและพกพาได้ในการสำรอง Docker volume ทุกอัน ทำงานได้บนทุก host ที่รัน Docker ไม่ต้องการ tools เพิ่มเติม และผลิต standard tar archive ที่คุณสามารถย้ายไปที่ไหนก็ได้
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Backup ด้วย throwaway container (tar) | ใช้ได้กับทุก volume ไม่ต้องพึ่ง tool เฉพาะฐานข้อมูล | ไม่รับประกันความสอดคล้องถ้า container ต้นทางยังเขียนข้อมูลอยู่ระหว่าง backup |
+| Database-native dump (`pg_dump`, `mysqldump`) | ได้ snapshot ที่สอดคล้องกันแม้ container ยังรันอยู่ | ใช้ได้เฉพาะกับฐานข้อมูลที่มี tool รองรับ ต้อง restore ผ่าน tool เดียวกัน |
+
+## Common Mistakes
+
+- ไม่มีแผนสำรองข้อมูลสำหรับ volume เลย จนกว่าจะเกิดปัญหาแล้วค่อยนึกได้ว่าไม่เคย backup
+- รัน `docker rm -v` หรือ `docker compose down -v` โดยไม่ตั้งใจ ลบทั้ง container และ volume พร้อมกันโดยไม่มี backup สำรองไว้ก่อน
+- สำรองข้อมูลไว้แต่ไม่เคยทดสอบ restore จริง พอถึงเวลาต้องใช้จริงกลับพบว่า archive เสียหายหรือ restore ไม่สำเร็จ
+
+> 💡 Real World Example
+>
+> ทีม production ที่ใช้ official Postgres image มักตั้ง cron job รัน `pg_dump` เป็นประจำ ควบคู่กับการสำรอง volume ด้วย tar container เพื่อให้มีทั้ง consistent snapshot และ raw backup สำรองซ้อนกัน ลดความเสี่ยงจากทั้งสองวิธี
+
 export const quizBackupRestore = [
   {
     q: "ทำไมคุณต้องใช้ throwaway container เพื่อสำรอง Docker volume แทนที่จะคัดลอกไฟล์โดยตรงจาก host?",

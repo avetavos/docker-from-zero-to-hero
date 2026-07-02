@@ -21,7 +21,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## กฎทอง: เรียงจาก stable ไป volatile
 
-วาง instruction ที่เปลี่ยนแปลง **น้อย** ไว้บนสุดของ Dockerfile และ instruction ที่เปลี่ยนแปลง **บ่อย** ไว้ล่างสุด Dependencies เปลี่ยนแปลงน้อยกว่า code แอปพลิเคชันมาก
+วาง instruction ที่เปลี่ยนแปลง **น้อย** ไว้บนสุดของ Dockerfile และ instruction ที่เปลี่ยนแปลง **บ่อย** ไว้ล่างสุด Dependencies เปลี่ยนแปลงน้อยกว่า code application มาก
 
 ### การเรียงลำดับที่ไม่ดี — cache bust ทุกครั้งที่ code เปลี่ยน
 
@@ -128,8 +128,25 @@ CMD ["node","-e","console.log('Cache-friendly build complete!')"]
 <PlayWithDocker client:visible code={cacheOrderingCode} label="See cache hits in action" />
 
 <Callout title="เรียงลำดับจากที่เปลี่ยนแปลงน้อยที่สุดไปมากที่สุด">
-Copy dependency manifest (`package.json`, `go.mod`, `requirements.txt`) และ install dependencies ก่อนที่จะ copy source code ของแอปพลิเคชัน การเปลี่ยนแปลงเพียงอย่างเดียวนี้ทำให้ layer การ install dependency สามารถ cache ได้สำหรับ build ส่วนใหญ่ในการพัฒนาแบบ iterative ซึ่งประหยัดเวลาได้มากในโปรเจกต์ที่มีการพัฒนาต่อเนื่อง
+Copy dependency manifest (`package.json`, `go.mod`, `requirements.txt`) และ install dependencies ก่อนที่จะ copy source code ของ application การเปลี่ยนแปลงเพียงอย่างเดียวนี้ทำให้ layer การ install dependency สามารถ cache ได้สำหรับ build ส่วนใหญ่ในการพัฒนาแบบ iterative ซึ่งประหยัดเวลาได้มากในโปรเจกต์ที่มีการพัฒนาต่อเนื่อง
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| เรียง instruction จากเปลี่ยนน้อยไปมาก (manifest ก่อน source) | cache hit บ่อยขึ้นมาก build รอบถัดไปเร็วขึ้นมากในการพัฒนาต่อเนื่อง | ต้องแยก `COPY` manifest ออกจาก `COPY` source อย่างตั้งใจ เพิ่มบรรทัดใน Dockerfile |
+| รวมหลาย `RUN` เป็น command เดียวด้วย `&&` | layer น้อยลง cache entry เดียวต่อ operation cleanup มีผลจริง | debug ยากขึ้นเพราะไม่มี layer ย่อยให้ inspect ทีละขั้นตอน |
+
+## Common Mistakes
+
+- วาง `COPY . .` ไว้ก่อน `RUN npm ci` ทำให้ dependency ถูกติดตั้งใหม่ทุกครั้งที่ code เปลี่ยน แม้ `package.json` จะไม่เปลี่ยนเลยก็ตาม
+- Pin base image ด้วย tag ลอยอย่าง `latest` แทนที่จะ pin version ที่ชัดเจน ทำให้ cache และผลลัพธ์ build ไม่ reproducible ระหว่างเครื่อง
+- แยก `RUN apt-get install` กับ `RUN rm -rf /var/lib/apt/lists/*` เป็นคนละ layer ทำให้ cleanup ไม่ช่วยลดขนาด image จริง เพราะ byte ถูก commit ไปแล้วในอีก layer
+
+> 💡 Real World Example
+>
+> Pipeline CI ที่ build image หลายร้อยครั้งต่อวัน (เช่น monorepo ขนาดใหญ่บน GitLab CI) จัดลำดับ Dockerfile ให้ dependency manifest อยู่บนสุดเสมอ เพราะ cache hit ที่ layer install เพียงจุดเดียวสามารถประหยัดเวลา build รวมได้หลายชั่วโมงต่อวันเมื่อคูณด้วยจำนวนรอบ build
 
 export const quizCacheOrdering = [
   {

@@ -68,9 +68,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ```
 
-### EXPOSE — ระบุพอร์ตเชิงเอกสาร
+### EXPOSE — ระบุ port เชิงเอกสาร
 
-`EXPOSE` เป็นเอกสารกำกับ — มันบอกผู้อ่านและเครื่องมือต่าง ๆ ว่าแอปพลิเคชันรับฟังที่พอร์ตไหน มัน**ไม่ได้**เปิดพอร์ตให้จริง ๆ คุณยังคงต้องใช้ `-p` ตอน `docker run`
+`EXPOSE` เป็นเอกสารกำกับ — มันบอกผู้อ่านและเครื่องมือต่าง ๆ ว่า application รับฟังที่ port ไหน มัน**ไม่ได้**เปิด port ให้จริง ๆ คุณยังคงต้องใช้ `-p` ตอน `docker run`
 
 ```dockerfile
 EXPOSE 3000
@@ -144,6 +144,23 @@ CMD ["node", "server.js"]
 ทุก instruction `FROM`, `RUN`, `COPY`, และ `ENV` จะสร้าง read-only layer ใหม่ขึ้นมา การมี layer น้อยลงและรวมไว้อย่างเหมาะสมจะทำให้ image ของคุณเล็กและส่งต่อได้เร็วขึ้น เลือก base image ที่เพรียวบาง (เช่น variant `-alpine` หรือ `-slim`) และรวมคำสั่ง `RUN` ที่ต่อเนื่องกันด้วย `&&` แทนที่จะแยกออกเป็นหลายบรรทัด
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| รวมคำสั่งด้วย `&&` ใน `RUN` เดียว | layer น้อยลง image เล็กลง | บรรทัดยาว อ่านยาก debug จุดที่ fail ลำบากขึ้น |
+| แยก `RUN` หลายบรรทัด | อ่านง่าย เห็นแต่ละ step ชัดเจน | layer เยอะขึ้น image ใหญ่ขึ้นโดยไม่จำเป็น |
+
+## Common Mistakes
+
+- เขียน `RUN` แยกหลายบรรทัดแทนที่จะรวมด้วย `&&` ทำให้ layer และขนาด image บวมโดยไม่จำเป็น
+- ไม่ตั้ง `WORKDIR` แล้ว hard-code full path ซ้ำ ๆ ในทุก instruction ทำให้แก้ path ทีต้องแก้หลายจุด
+- เข้าใจผิดว่า `EXPOSE` เปิด port ให้จริง ทั้งที่มันเป็นแค่เอกสารกำกับ ยังต้องใช้ `-p` ตอน `docker run` อยู่ดี
+
+> 💡 Real World Example
+>
+> Docker Hub official image ของ `node` จัดโครงสร้าง Dockerfile ตามแบบแผนเดียวกันแทบทุกตัว (`FROM` → `WORKDIR` → คัดลอก manifest → `RUN` install → คัดลอก source → `CMD`) จนกลายเป็น pattern มาตรฐานที่ community อ้างอิงเวลาต้องเขียน Dockerfile เอง
+
 export const quizBasics = [
   {
     q: "instruction ใดกำหนด working directory สำหรับ instruction ถัด ๆ ไปทั้งหมดใน Dockerfile?",
@@ -158,10 +175,10 @@ export const quizBasics = [
   {
     q: "จริง ๆ แล้ว EXPOSE ทำอะไร?",
     options: [
-      "มันเปิดพอร์ตบนเครื่อง host เพื่อให้ทราฟฟิกภายนอกเข้าถึง container ได้",
-      "มันระบุพอร์ตที่แอปพลิเคชันรับฟังเชิงเอกสาร แต่ไม่ได้เปิดพอร์ตให้จริง",
+      "มันเปิด port บนเครื่อง host เพื่อให้ทราฟฟิกภายนอกเข้าถึง container ได้",
+      "มันระบุ port ที่ application รับฟังเชิงเอกสาร แต่ไม่ได้เปิด port ให้จริง",
       "มันสร้างกฎ firewall ภายใน container",
-      "มันแมปพอร์ตของ host ไปยังพอร์ตของ container"
+      "มันแมป port ของ host ไปยัง port ของ container"
     ],
     answer: 1
   },

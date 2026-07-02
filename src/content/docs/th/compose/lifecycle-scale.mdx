@@ -16,7 +16,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ### docker compose up
 
-สตาร์ทเซอร์วิสทั้งหมดที่กำหนดใน `compose.yaml` กด `Ctrl-C` เพื่อหยุด
+สตาร์ท service ทั้งหมดที่กำหนดใน `compose.yaml` กด `Ctrl-C` เพื่อหยุด
 
 ```bash
 docker compose up
@@ -50,13 +50,13 @@ docker compose down -v
 
 ### docker compose logs
 
-Stream logs จากทุกเซอร์วิส:
+Stream logs จากทุก service:
 
 ```bash
 docker compose logs -f
 ```
 
-Stream logs จากเซอร์วิสเฉพาะ:
+Stream logs จาก service เฉพาะ:
 
 ```bash
 docker compose logs -f app
@@ -72,13 +72,13 @@ docker compose ps
 
 ### docker compose build
 
-Build หรือ rebuild images สำหรับเซอร์วิสที่ใช้ `build:`:
+Build หรือ rebuild images สำหรับ service ที่ใช้ `build:`:
 
 ```bash
 docker compose build
 ```
 
-Build เซอร์วิสเฉพาะ:
+Build service เฉพาะ:
 
 ```bash
 docker compose build app
@@ -92,7 +92,7 @@ docker compose build app
 docker compose exec app sh
 ```
 
-## การ scale เซอร์วิส
+## การ scale service
 
 รัน replicas หลายตัวของ stateless service ด้วย `--scale`:
 
@@ -100,14 +100,14 @@ docker compose exec app sh
 docker compose up -d --scale worker=3
 ```
 
-นี่สตาร์ทสามคอนเทนเนอร์สำหรับเซอร์วิส `worker` แต่ละ replica ได้ชื่อเฉพาะเช่น `project-worker-1`, `project-worker-2`, `project-worker-3`
+นี่สตาร์ทสาม container สำหรับ service `worker` แต่ละ replica ได้ชื่อเฉพาะเช่น `project-worker-1`, `project-worker-2`, `project-worker-3`
 
-ข้อจำกัดสำคัญของเซอร์วิสที่ scale:
+ข้อจำกัดสำคัญของ service ที่ scale:
 
-- อย่าใช้ `container_name:` แบบตายตัว — Compose ไม่สามารถตั้งชื่อเดียวกันให้สามคอนเทนเนอร์
-- อย่าใช้ host-port mappings บนเซอร์วิสที่ scale — ไม่สามารถ bind host port เดิมกับสามคอนเทนเนอร์
+- อย่าใช้ `container_name:` แบบตายตัว — Compose ไม่สามารถตั้งชื่อเดียวกันให้สาม container
+- อย่าใช้ host-port mappings บน service ที่ scale — ไม่สามารถ bind host port เดิมกับสาม container
 
-นิยามเซอร์วิสที่ scale ได้:
+นิยาม service ที่ scale ได้:
 
 ```yaml
 services:
@@ -195,9 +195,26 @@ echo "All containers removed. Named volumes (if any) are still intact."`;
 การรัน `docker compose down` หยุดและลบ containers และ network ที่สร้างอัตโนมัติ Named volumes ถูกเก็บไว้โดยเจตนาเพื่อให้ข้อมูลอยู่รอดได้หลัง restart เพิ่ม flag `-v` เฉพาะเมื่อต้องการทำลาย volumes ด้วย (เช่น reset ฐานข้อมูล dev) ไม่มีการ undo สำหรับ `-v`
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| `docker compose --scale` | scale service แนวนอนได้เร็ว ทดสอบ load บนเครื่อง dev เดียวได้ทันที | จำกัดที่ host เดียว ไม่มี auto-scaling หรือ self-healing ข้าม node |
+| Kubernetes Deployment/HPA | scale ข้ามหลาย node อัตโนมัติตาม load พร้อม self-healing | ต้องตั้ง cluster, controller และเรียนรู้ operational model ที่ซับซ้อนกว่ามาก |
+
+## Common Mistakes
+
+- ใช้ `depends_on: - db` แล้วคิดว่า Compose รอจนกว่า database จะพร้อมรับ connection จริง ทั้งที่มันแค่รอให้ container สตาร์ทเท่านั้น — ต้องเพิ่ม `healthcheck` และ `condition: service_healthy` ถ้าต้องการรอความพร้อมจริง
+- รัน `docker compose up -d --scale db=3` กับ service ที่เป็น stateful เช่นฐานข้อมูล ทั้งที่ image นั้นไม่ได้ออกแบบมาให้รันหลาย instance พร้อมกัน (data corruption หรือ port conflict ตามมา)
+- ลืมว่า `docker compose down -v` ลบ named volumes แบบไม่มี undo แล้วรันโดยไม่ตรวจสอบก่อนว่าเป็น environment ไหน
+
+> 💡 Real World Example
+>
+> ทีม platform จำนวนมากใช้ `docker compose up -d --scale worker=N` เพื่อทดสอบ behavior การ scale ของ stateless worker บนเครื่อง dev ก่อน แล้วค่อยย้าย pattern เดียวกันไปเป็น Kubernetes `replicas` และ `HorizontalPodAutoscaler` ใน production ที่ต้อง scale ข้ามหลายเครื่องจริง
+
 export const quizLifecycle = [
   {
-    q: "คำสั่งใดสตาร์ทเซอร์วิสในโหมด detached (พื้นหลัง)?",
+    q: "คำสั่งใดสตาร์ท service ในโหมด detached (พื้นหลัง)?",
     options: [
       "docker compose start -d",
       "docker compose up -d",
@@ -209,7 +226,7 @@ export const quizLifecycle = [
   {
     q: "docker compose down -v ทำอะไรเพิ่มเติมจาก docker compose down ธรรมดา?",
     options: [
-      "หยุดเซอร์วิสอย่างนุ่มนวลกว่าโดยใช้ SIGTERM",
+      "หยุด service อย่างนุ่มนวลกว่าโดยใช้ SIGTERM",
       "ลบ named volumes ด้วย",
       "ลบไฟล์ compose.yaml",
       "บังคับลบ containers ที่ค้างอยู่"
@@ -217,7 +234,7 @@ export const quizLifecycle = [
     answer: 1
   },
   {
-    q: "flag ใด rebuild images ก่อนสตาร์ทเซอร์วิส?",
+    q: "flag ใด rebuild images ก่อนสตาร์ท service?",
     options: [
       "docker compose up --rebuild",
       "docker compose up --refresh",
@@ -227,9 +244,9 @@ export const quizLifecycle = [
     answer: 2
   },
   {
-    q: "ทำไมเซอร์วิสที่ scale ไม่สามารถใช้ host-port mapping แบบ ports: - '8080:80'?",
+    q: "ทำไม service ที่ scale ไม่สามารถใช้ host-port mapping แบบ ports: - '8080:80'?",
     options: [
-      "เซอร์วิสที่ scale ใช้ key ports: ไม่ได้เลย",
+      "service ที่ scale ใช้ key ports: ไม่ได้เลย",
       "สาม replicas ไม่สามารถ bind กับ host port เดียวกันพร้อมกันได้",
       "flag --scale ปิดการใช้งาน port forwarding",
       "เฉพาะ replica แรกเท่านั้นที่ได้ port; ที่เหลือข้ามไปเงียบๆ"

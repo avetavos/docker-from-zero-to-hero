@@ -14,8 +14,8 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 Docker มีสองแพ็กเกจหลัก ขึ้นอยู่กับระบบปฏิบัติการของคุณ:
 
-- **Docker Desktop** — แอปพลิเคชัน GUI ที่รวม Docker Engine, Docker Compose, Kubernetes แบบ node เดียว และ dashboard สำหรับ macOS และ Windows
-- **Docker Engine** — daemon บรรทัดคำสั่งสำหรับ Linux ไม่มี GUI แต่เบากว่าและเหมาะสำหรับเซิร์ฟเวอร์และ CI
+- **Docker Desktop** — application GUI ที่รวม Docker Engine, Docker Compose, Kubernetes แบบ node เดียว และ dashboard สำหรับ macOS และ Windows
+- **Docker Engine** — daemon บรรทัดคำสั่งสำหรับ Linux ไม่มี GUI แต่เบากว่าและเหมาะสำหรับ server และ CI
 
 ## ติดตั้งบน macOS
 
@@ -67,7 +67,7 @@ docker run hello-world
 
 `docker version` แสดงเวอร์ชันของทั้ง client และ server (daemon) หาก server section หายไปแสดงว่า daemon ไม่ได้ทำงานอยู่
 
-`docker run hello-world` ดึง image ขนาดเล็กจาก Docker Hub รันในคอนเทนเนอร์ พิมพ์ข้อความยืนยัน แล้วออก เป็นการยืนยัน end-to-end ตั้งแต่ registry ไปจนถึง runtime
+`docker run hello-world` ดึง image ขนาดเล็กจาก Docker Hub รันใน container พิมพ์ข้อความยืนยัน แล้วออก เป็นการยืนยัน end-to-end ตั้งแต่ registry ไปจนถึง runtime
 
 ```text
 Hello from Docker!
@@ -84,6 +84,23 @@ docker run hello-world`
 <Callout title="`docker version` แสดงทั้ง client และ server">
 หาก server section หายไปในผลลัพธ์ของ `docker version` แสดงว่า Docker daemon ไม่ได้ทำงานอยู่ บน macOS และ Windows ให้เปิด Docker Desktop ก่อน บน Linux ให้รัน `sudo systemctl start docker` หรือตรวจสอบว่าคุณอยู่ในกลุ่ม `docker`
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Docker Desktop | ติดตั้งง่าย มี GUI พร้อม Compose และ Kubernetes แบบ node เดียวในตัว | ใช้ทรัพยากรเครื่องมากกว่า และมี license แบบเสียเงินสำหรับองค์กรขนาดใหญ่ |
+| Docker Engine | เบา เหมาะกับ server และ CI ไม่มีค่า license | ไม่มี GUI ต้องจัดการทุกอย่างผ่าน CLI เอง |
+
+## Common Mistakes
+
+- รัน `docker run` โดยไม่เช็คก่อนว่า daemon ทำงานอยู่ (ส่วน Server หายไปใน `docker version`) แล้วเจอ error ที่ดูสับสน
+- ติดตั้ง Docker Engine บน Linux แล้วลืมเพิ่ม user เข้ากลุ่ม `docker` ทำให้ต้องใช้ `sudo` ทุกคำสั่งหรือเจอ permission denied ที่ `/var/run/docker.sock`
+- เข้าใจผิดว่า Docker Desktop จำเป็นสำหรับทุก OS ทั้งที่บน Linux ควรใช้ Docker Engine ตรง ๆ เพราะเบากว่า
+
+> 💡 Real World Example
+>
+> ทีม infra จำนวนมากรัน Docker Engine ตรง ๆ บน Linux CI runner โดยไม่ใช้ Docker Desktop เพื่อลด overhead และหลีกเลี่ยงค่า license ขณะที่นักพัฒนาบน macOS หรือ Windows ยังใช้ Docker Desktop เพื่อความสะดวกในการพัฒนาบนเครื่อง
 
 export const quizInstallVerify = [
   {
@@ -111,7 +128,7 @@ export const quizInstallVerify = [
     options: [
       "การติดตั้ง Docker ล้าสมัยและต้องอัปเกรด",
       "Docker daemon ไม่ได้ทำงานอยู่",
-      "คุณไม่มีการเชื่อมต่อเครือข่ายไปยัง Docker Hub",
+      "คุณไม่มีการเชื่อมต่อ network ไปยัง Docker Hub",
       "ส่วน Server ถูกซ่อนไว้เพื่อความปลอดภัย"
     ],
     answer: 1
@@ -120,7 +137,7 @@ export const quizInstallVerify = [
     q: "การรัน `docker run hello-world` หลังติดตั้ง Docker มีจุดประสงค์อะไร?",
     options: [
       "ตั้งค่า Docker Desktop ด้วยค่าเริ่มต้น",
-      "ยืนยันทั้งกระบวนการ: CLI, daemon, การดึง image และการรันคอนเทนเนอร์",
+      "ยืนยันทั้งกระบวนการ: CLI, daemon, การดึง image และการรัน container",
       "ลงทะเบียนเครื่องของคุณกับ Docker Hub",
       "ติดตั้ง hello-world image ถาวรไว้ใช้แบบออฟไลน์"
     ],

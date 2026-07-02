@@ -12,7 +12,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## ปัญหาของ single-stage builds
 
-แอปพลิเคชันทั่วไปต้องการเครื่องมือที่แตกต่างกันมากในสองช่วง:
+application ทั่วไปต้องการเครื่องมือที่แตกต่างกันมากในสองช่วง:
 
 - **ช่วง Build:** compiler, test runner, type checker, build toolchain (`tsc`, `go build`, `maven` ฯลฯ)
 - **ช่วง Runtime:** เฉพาะ output ที่ compile แล้วและ dependency ที่จำเป็นสำหรับการรัน
@@ -137,6 +137,24 @@ CMD ["node","dist/server.js"]
 ทุก compiler, test runner หรือ dev dependency ที่ติดตั้งใน build stage จะถูกทิ้งโดยอัตโนมัติเมื่อ Docker export final stage ผลลัพธ์คือ production image ที่เล็กกว่า เร็วกว่า และปลอดภัยกว่า โดยไม่ต้องทำงานเพิ่มในช่วง runtime
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Multi-stage build | final image เล็กมาก มีเฉพาะ runtime artifact ไม่มี build tool ตกค้าง | Dockerfile ซับซ้อนขึ้น ต้องดูแลสอง stage ขึ้นไปให้ sync กันตลอด |
+| Runtime stage เป็น alpine | เล็ก มี shell ให้ exec เข้าไป debug ได้สะดวก | ยังมี package manager และ shell ซึ่งเพิ่ม attack surface เทียบกับ distroless |
+| Runtime stage เป็น distroless | เล็กกว่า alpine อีกขั้น ไม่มี shell จึงปลอดภัยกว่า | ไม่มี shell ทำให้ exec เข้าไป debug container ที่กำลังรันแบบ interactive ไม่ได้เลย |
+
+## Common Mistakes
+
+- ใช้ base image เดียวกันทั้ง build stage และ runtime stage ทั้งที่ runtime ไม่ต้องการ compiler เลย ทำให้พลาดโอกาสลดขนาด image ไปมาก
+- `COPY --from=<stage>` ทั้งไดเรกทอรีของ build stage แทนที่จะเลือกเฉพาะไฟล์ artifact ที่จำเป็น ทำให้ final image ใหญ่เกินความจำเป็น
+- ไม่ pin version ของ base image ในแต่ละ stage (เช่นใช้ `latest`) ทำให้ build ไม่ reproducible ระหว่าง environment
+
+> 💡 Real World Example
+>
+> Binary ที่ compile แบบ static ด้วย Go หรือ Rust แล้วรันบน `distroless` หรือ `scratch` base image มักได้ production image สุดท้ายต่ำกว่า 20MB เป็นประจำ ซึ่งเป็น pattern ที่ Google แนะนำและ publish เองผ่าน `gcr.io/distroless`
+
 export const quizMultiStage = [
   {
     q: "ใน multi-stage Dockerfile stage ใดที่จะกลายเป็น final image?",
@@ -162,7 +180,7 @@ export const quizMultiStage = [
     q: "ทำไม `FROM scratch` จึงเหมาะสำหรับ compiled Go binary?",
     options: [
       "scratch มี Ubuntu environment ขนาดเล็ก",
-      "scratch ปิดการใช้งานเครือข่ายเพื่อความปลอดภัย",
+      "scratch ปิดการใช้งาน network เพื่อความปลอดภัย",
       "scratch คือ base ว่างเปล่าสมบูรณ์ ดังนั้น final image มีเฉพาะ binary",
       "scratch จะ compress binary โดยอัตโนมัติ"
     ],

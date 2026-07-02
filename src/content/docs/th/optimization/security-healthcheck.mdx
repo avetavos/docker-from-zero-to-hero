@@ -12,7 +12,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## ทำไม container security จึงสำคัญ
 
-โดย default process ภายใน Docker container จะรันในฐานะ **root** (UID 0) หาก attacker ใช้ประโยชน์จากช่องโหว่ในแอปพลิเคชัน พวกเขาจะได้รับ root privilege ภายใน container ซึ่งขึ้นอยู่กับ host configuration อาจแปลงเป็น host-level access ได้ การเปลี่ยนแปลง Dockerfile สองอย่างง่ายๆ สามารถลดความเสี่ยงที่พบบ่อยที่สุดได้
+โดย default process ภายใน Docker container จะรันในฐานะ **root** (UID 0) หาก attacker ใช้ประโยชน์จากช่องโหว่ใน application พวกเขาจะได้รับ root privilege ภายใน container ซึ่งขึ้นอยู่กับ host configuration อาจแปลงเป็น host-level access ได้ การเปลี่ยนแปลง Dockerfile สองอย่างง่ายๆ สามารถลดความเสี่ยงที่พบบ่อยที่สุดได้
 
 ## การรันในฐานะ non-root user
 
@@ -159,11 +159,28 @@ CMD ["node","server.js"]
 การรันในฐานะ non-root user จำกัด blast radius หาก application ถูก compromise การฝัง secret ใน image layer เปิดเผยต่อทุกคนที่ดึง image ได้ HEALTHCHECK ช่วยให้ orchestrator restart container ที่ unhealthy โดยอัตโนมัติก่อนที่ user จะสังเกตเห็นปัญหา
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Runtime base เป็น alpine | มี shell ให้ debug เข้าไปตรวจสอบ container ที่กำลังรันได้ | ยังมี shell และ package manager ให้ผู้โจมตีใช้ประโยชน์ได้หากเจาะเข้ามา |
+| Runtime base เป็น distroless | ไม่มี shell ไม่มี package manager attack surface เล็กกว่ามาก | debug interactive แทบทำไม่ได้เลย ต้องพึ่ง log และ HEALTHCHECK แทน |
+
+## Common Mistakes
+
+- ฝัง secret เช่น API key หรือ npm token ไว้ใน `RUN` instruction แล้วคิดว่าการ `RUN rm` ในภายหลังลบออกได้ ทั้งที่ secret ยังอยู่ใน layer history ที่ `docker history` มองเห็น
+- ไม่ใส่ `HEALTHCHECK` ทำให้ orchestrator แยกไม่ออกระหว่าง container ที่ hang กับ container ที่ทำงานปกติ และไม่ restart ให้อัตโนมัติ
+- รัน process หลักในฐานะ root โดยไม่ตั้งใจ ทำให้ blast radius ของช่องโหว่ขยายจาก application ไปถึงระดับ container privilege
+
+> 💡 Real World Example
+>
+> Kubernetes ใช้กลไกแบบเดียวกับ `HEALTHCHECK` ผ่าน liveness และ readiness probe เพื่อตัดสินใจ restart pod ที่ hang โดยอัตโนมัติ ทีมที่ deploy image แบบ distroless คู่กับ health check ที่ตั้งค่าถูกต้องจึงลด downtime จาก container ที่ค้างแบบเงียบๆ ได้มาก
+
 export const quizSecurityHealthcheck = [
   {
     q: "ทำไมการรัน container ในฐานะ root จึงถือเป็นความเสี่ยงด้านความปลอดภัย?",
     options: [
-      "Root container ไม่สามารถเชื่อมต่อเครือข่ายได้",
+      "Root container ไม่สามารถเชื่อมต่อ network ได้",
       "หาก application ถูก exploit ผู้โจมตีจะได้รับ root privilege ภายใน container ซึ่งอาจขยายไปถึง host",
       "Docker ป้องกัน root container ไม่ให้เขียนไฟล์",
       "Root user ไม่สามารถอ่าน environment variable ได้"

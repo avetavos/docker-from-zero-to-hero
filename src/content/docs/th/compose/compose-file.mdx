@@ -26,11 +26,11 @@ services:
     command: ["executable", "arg"]
 ```
 
-แต่ละ key ภายใต้ `services` คือชื่อเซอร์วิสที่คุณเลือกเอง Compose สตาร์ทหนึ่งคอนเทนเนอร์ต่อหนึ่งเซอร์วิสโดยค่าเริ่มต้น
+แต่ละ key ภายใต้ `services` คือชื่อ service ที่คุณเลือกเอง Compose สตาร์ทหนึ่ง container ต่อหนึ่ง service โดยค่าเริ่มต้น
 
 ## key services
 
-`services` คือ map แต่ละรายการคือเซอร์วิสที่มีชื่อ ชื่อนั้นกลายเป็นทั้ง identifier ของคอนเทนเนอร์และ DNS hostname ที่เซอร์วิสอื่นใช้เพื่อเข้าถึงมันบน network ภายใน
+`services` คือ map แต่ละรายการคือ service ที่มีชื่อ ชื่อนั้นกลายเป็นทั้ง identifier ของ container และ DNS hostname ที่ service อื่นใช้เพื่อเข้าถึงมันบน network ภายใน
 
 ```yaml
 services:
@@ -40,7 +40,7 @@ services:
     image: postgres:17-alpine
 ```
 
-ที่นี่ `api` และ `db` คือสองเซอร์วิส Compose สร้างหนึ่งคอนเทนเนอร์สำหรับแต่ละตัว
+ที่นี่ `api` และ `db` คือสอง service Compose สร้างหนึ่ง container สำหรับแต่ละตัว
 
 ## image กับ build
 
@@ -84,7 +84,7 @@ services:
 
 ## environment
 
-ส่ง environment variables เข้าคอนเทนเนอร์แบบ list หรือ mapping:
+ส่ง environment variables เข้า container แบบ list หรือ mapping:
 
 ```yaml
 # แบบ list
@@ -175,9 +175,26 @@ docker compose down`;
 
 <PlayWithDocker client:visible code={composeFileCode} label="สำรวจ fields ของ compose.yaml" />
 
-<Callout title="หนึ่งเซอร์วิส = หนึ่งคอนเทนเนอร์ (โดยค่าเริ่มต้น)">
-แต่ละรายการภายใต้ `services` สตาร์ทหนึ่งคอนเทนเนอร์เว้นแต่คุณจะใช้ `--scale` ชื่อเซอร์วิสทำหน้าที่เป็น hostname บน Compose network ภายใน key `version:` ที่ล้าสมัยที่ด้านบนของไฟล์ไม่จำเป็นอีกต่อไป — ละเว้นจาก compose.yaml ใหม่ทั้งหมด
+<Callout title="หนึ่ง service = หนึ่ง container (โดยค่าเริ่มต้น)">
+แต่ละรายการภายใต้ `services` สตาร์ทหนึ่ง container เว้นแต่คุณจะใช้ `--scale` ชื่อ service ทำหน้าที่เป็น hostname บน Compose network ภายใน key `version:` ที่ล้าสมัยที่ด้านบนของไฟล์ไม่จำเป็นอีกต่อไป — ละเว้นจาก compose.yaml ใหม่ทั้งหมด
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Docker Compose | เขียน compose.yaml ไฟล์เดียว รัน local ได้ทันที เหมาะกับ dev loop | รันได้จริงบน host เดียว ไม่มี self-healing ข้าม node |
+| Kubernetes | scale และ self-heal ข้ามหลาย node ในคลัสเตอร์ | ต้องเรียนรู้ manifest, controller และ operational overhead ที่สูงกว่ามาก |
+
+## Common Mistakes
+
+- ลืมว่า key `services` เป็น required key เดียว แล้วพยายามใส่ config ระดับ service ไว้ผิดที่ (เช่นใส่ `image:`ไว้นอก block ของ service)
+- ใส่ `version: "3.9"` กลับเข้ามาใน compose.yaml ใหม่เพราะ copy จาก tutorial เก่า ทั้งที่ tooling ปัจจุบันไม่อ่านค่านี้แล้ว
+- ลืมใส่ quote รอบ port mapping (เช่น `ports: - 8080:80` แทนที่จะเป็น `"8080:80"`) ทำให้ YAML parser ตีความ colon ผิดในบางเคส
+
+> 💡 Real World Example
+>
+> ทีม dev ที่ Shopify และทีมเล็กจำนวนมากใช้ compose.yaml เดียวกันเป็นจุดเริ่มต้นของทั้ง local dev และ production image — เขียนโครงสร้าง services ให้ถูกต้องตั้งแต่ compose-file แล้วค่อยเอา image เดียวกันไป deploy บน Kubernetes ทีหลัง
 
 export const quizComposeFile = [
   {
@@ -211,12 +228,12 @@ export const quizComposeFile = [
     answer: 1
   },
   {
-    q: "key build: . ในนิยามเซอร์วิสทำอะไร?",
+    q: "key build: . ในนิยาม service ทำอะไร?",
     options: [
       "Pull image ที่ tag ด้วยจุด",
       "สร้าง image จาก Dockerfile ใน directory ปัจจุบัน",
-      "กำหนด working directory ภายในคอนเทนเนอร์",
-      "Copy directory ปัจจุบันเข้าไปในคอนเทนเนอร์"
+      "กำหนด working directory ภายใน container",
+      "Copy directory ปัจจุบันเข้าไปใน container"
     ],
     answer: 1
   }

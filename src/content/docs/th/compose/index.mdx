@@ -1,6 +1,6 @@
 ---
 title: 'Docker Compose'
-description: 'กำหนดและรันแอปพลิเคชัน Docker หลายคอนเทนเนอร์แบบ declarative ในไฟล์ compose.yaml ไฟล์เดียว'
+description: 'กำหนดและรัน application Docker หลาย container แบบ declarative ในไฟล์ compose.yaml ไฟล์เดียว'
 sidebar:
   order: 1
 ---
@@ -12,9 +12,9 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 
 ## Docker Compose คืออะไร?
 
-การรันแอปพลิเคชันจริงแทบทุกครั้งต้องใช้มากกว่าหนึ่งคอนเทนเนอร์ — เว็บเซิร์ฟเวอร์ ฐานข้อมูล อาจจะมีแคชด้วย หากไม่มี Compose คุณต้องเปิดหลาย terminal พิมพ์คำสั่ง `docker run` ยาวๆ สำหรับแต่ละเซอร์วิส และจำทุกอย่างที่ต้องเชื่อมต่อกัน กระบวนการนั้นเสียหายง่ายและแชร์กับทีมได้ยาก
+การรัน application จริงแทบทุกครั้งต้องใช้มากกว่าหนึ่ง container — เว็บ server ฐานข้อมูล อาจจะมี cache ด้วย หากไม่มี Compose คุณต้องเปิดหลาย terminal พิมพ์คำสั่ง `docker run` ยาวๆ สำหรับแต่ละ service และจำทุกอย่างที่ต้องเชื่อมต่อกัน เวิร์กโฟลว์แบบนั้นพังง่ายและแชร์กับทีมได้ยาก
 
-Docker Compose ให้คุณอธิบายแอปพลิเคชันหลายคอนเทนเนอร์ทั้งหมดในไฟล์เดียวชื่อ `compose.yaml` คำสั่งเดียวก็สตาร์ทได้ทุกอย่าง:
+Docker Compose ให้คุณอธิบาย application หลาย container ทั้งหมดในไฟล์เดียวชื่อ `compose.yaml` คำสั่งเดียวก็สตาร์ทได้ทุกอย่าง:
 
 ```bash
 docker compose up
@@ -64,13 +64,13 @@ services:
 |---------|--------|
 | 1 (หน้านี้) | ทำไมต้อง Compose — แอปแบบ declarative ไฟล์เดียว |
 | 2 | โครงสร้าง compose.yaml เชิงลึก |
-| 3 | แอปหลายเซอร์วิสพร้อม networking |
+| 3 | แอปหลาย service พร้อม networking |
 | 4 | Environment variables, volumes และ networks |
 | 5 | Lifecycle commands และการ scale |
 
 ## แอป Compose แรกแบบเรียบง่าย
 
-นี่คือ `compose.yaml` ที่เล็กที่สุดที่ใช้งานได้จริง — เซอร์วิส Nginx หนึ่งตัว:
+นี่คือ `compose.yaml` ที่เล็กที่สุดที่ใช้งานได้จริง — service Nginx หนึ่งตัว:
 
 ```yaml
 services:
@@ -84,7 +84,7 @@ services:
 
 ## ลองปฏิบัติจริง
 
-snippet ด้านล่างเขียน `compose.yaml` สตาร์ท และตรวจสอบเซอร์วิสที่กำลังรัน — ทั้งหมดภายใน Play with Docker
+snippet ด้านล่างเขียน `compose.yaml` สตาร์ท และตรวจสอบ service ที่กำลังรัน — ทั้งหมดภายใน Play with Docker
 
 export const composeIndexCode = `# Write a minimal compose.yaml
 cat > compose.yaml <<'EOF'
@@ -118,14 +118,14 @@ export const quizIndex = [
     q: "ประโยชน์หลักของการใช้ Docker Compose แทนคำสั่ง docker run ธรรมดาคืออะไร?",
     options: [
       "มันสร้าง image เร็วกว่าโดยใช้ parallel layers",
-      "ให้คุณกำหนดและจัดการแอปหลายคอนเทนเนอร์ในไฟล์ declarative ไฟล์เดียว",
+      "ให้คุณกำหนดและจัดการแอปหลาย container ในไฟล์ declarative ไฟล์เดียว",
       "มัน push image ไปยัง registry โดยอัตโนมัติ",
       "ไม่จำเป็นต้องมี Dockerfile อีกต่อไป"
     ],
     answer: 1
   },
   {
-    q: "คำสั่งใดสตาร์ทเซอร์วิสทั้งหมดใน compose.yaml แบบ foreground?",
+    q: "คำสั่งใดสตาร์ท service ทั้งหมดใน compose.yaml แบบ foreground?",
     options: [
       "docker compose start",
       "docker compose run",

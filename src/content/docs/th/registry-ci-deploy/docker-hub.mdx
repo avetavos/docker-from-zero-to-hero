@@ -105,6 +105,23 @@ docker pull bitnami/postgresql:16
 ใช้ personal access token (ไม่ใช่รหัสผ่าน) สำหรับ `docker login` ใน CI pipeline ควร authenticate เสมอก่อน pull base image — anonymous pull ใช้ rate limit ร่วมกันทุกเครื่องบน IP เดียวกัน และอาจทำให้ build ล้มเหลวแบบสุ่ม เก็บ token ไว้เป็น encrypted secret ห้ามใส่ใน Dockerfile หรือ source code
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Docker Hub | Free tier ใช้งานง่าย เริ่มต้นได้ทันที ecosystem ของ official image ใหญ่ที่สุด | Anonymous pull มี rate limit และการควบคุมสิทธิ์แบบละเอียด (fine-grained access) มีจำกัดในแผนฟรี |
+| Private registry (เช่น ECR, GHCR) | ผูกกับ IAM/permission ของ cloud provider ได้ละเอียด ไม่มี anonymous pull rate limit | ต้องตั้งค่าเพิ่ม และมักผูกติดกับ cloud provider หรือ platform นั้น ๆ |
+
+## Common Mistakes
+
+- เก็บ Docker Hub token ไว้ใน Dockerfile หรือ commit เข้า source code แทนที่จะใช้ secret store
+- ใช้ anonymous pull ใน CI หรือ production แทนการ authenticate ทำให้โดน rate limit แบบสุ่ม
+- Push เฉพาะ `latest` tag โดยไม่มี version tag ที่ pin ได้ ทำให้ rollback กลับเวอร์ชันเก่ายาก
+
+> 💡 Real World Example
+>
+> Docker Hub บังคับ anonymous pull rate limit ที่ 100 pulls ต่อ 6 ชั่วโมงต่อ IP ซึ่งทำให้หลายทีม โดยเฉพาะทีมที่รัน CI runner หรือ Kubernetes cluster ขนาดใหญ่ที่ใช้ IP ร่วมกัน ต้องตั้ง pull-through mirror cache เพื่อลดจำนวน request ที่ยิงตรงไปยัง Docker Hub
+
 export const quizDockerHub = [
   {
     q: "ประเภท credentials ที่แนะนำสำหรับ docker login บน Docker Hub คืออะไร?",

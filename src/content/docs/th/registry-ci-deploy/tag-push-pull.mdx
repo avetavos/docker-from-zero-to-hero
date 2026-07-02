@@ -126,6 +126,23 @@ docker stop test-nginx`;
 Push version tag แน่นอน (เช่น `2.1.0`) ควบคู่กับ `latest` เสมอ เมื่อ tag อยู่ใน registry และถูกใช้โดยระบบอื่นแล้ว ห้าม overwrite — สร้าง tag ใหม่สำหรับการเปลี่ยนแปลงใด ๆ วิธีนี้รักษา reproducibility ของการ deploy และป้องกันการ breakage แบบไม่รู้ตัว
 </Callout>
 
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| SHA digest tag (`sha256:...`) | Exact และ unambiguous บอกได้แน่นอนว่าเป็น content เดิม reproducible 100% | อ่านไม่รู้เรื่อง (ไม่ human-readable) สื่อสารหรือจำเวอร์ชันได้ยาก |
+| Semver tag (เช่น `v1.2.3`) | อ่านง่าย สื่อความหมายเวอร์ชันและ intent ชัดเจน | Mutable — ใครก็ push ทับ tag เดิมด้วย content ใหม่ได้ถ้าไม่มีการป้องกัน |
+
+## Common Mistakes
+
+- Push และ deploy เฉพาะ `latest` tag ทำให้ไม่มี version ที่ pin ไว้ให้ rollback กลับไปได้เมื่อเกิดปัญหา
+- Overwrite semver tag เดิมด้วย content ใหม่ แทนที่จะสร้าง tag ใหม่เสมอ
+- ไม่ pin ด้วย SHA digest คู่กับ semver ทำให้ตรวจสอบไม่ได้ว่า tag ที่ deploy จริงยังเป็น content เดิมหรือถูกสลับไปแล้ว
+
+> 💡 Real World Example
+>
+> หลายทีมที่ใช้ GitOps (เช่น Argo CD, Flux) จะ pin deployment manifest ด้วย SHA digest แทน semver tag เพื่อรับประกันว่า cluster รัน content เดียวกันทุกครั้ง แม้ tag เดิมจะถูก overwrite ในภายหลังก็ตาม
+
 export const quizTagPushPull = [
   {
     q: "`docker tag acme/app:1.0 acme/app:latest` ทำอะไรกับ storage จริง ๆ?",

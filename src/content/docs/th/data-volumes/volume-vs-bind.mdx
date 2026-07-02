@@ -27,7 +27,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 ### ใช้ named volumes เมื่อ:
 
 - คุณต้องการให้ข้อมูลรอดชีวิตจากการสร้าง container ใหม่ (ฐานข้อมูล object storage cache)
-- คุณ deploy ไปยัง remote host หรือสภาพแวดล้อม CI/CD ที่ host path อาจแตกต่างกัน
+- คุณ deploy ไปยัง remote host หรือ environment CI/CD ที่ host path อาจแตกต่างกัน
 - คุณต้องการให้ Docker เป็นเจ้าของ lifecycle ของพื้นที่จัดเก็บ
 
 ### ใช้ bind mounts เมื่อ:
@@ -62,7 +62,7 @@ docker run --rm --mount type=volume,source=mydata,target=/app/data,readonly myim
 docker run --rm --mount type=bind,source=$(pwd)/config,target=/etc/app/config,readonly myimage
 ```
 
-Read-only mounts เป็น security best practice เมื่อ container ต้องการเพียงแค่อ่านข้อมูล — ป้องกันกระบวนการที่ถูก compromise หรือมีข้อบกพร่องจากการเขียนทับไฟล์สำคัญ
+Read-only mounts เป็น security best practice เมื่อ container ต้องการเพียงแค่อ่านข้อมูล — ป้องกัน process ที่ถูก compromise หรือมีข้อบกพร่องจากการเขียนทับไฟล์สำคัญ
 
 ## ฝึกปฏิบัติ
 
@@ -94,8 +94,25 @@ rm -rf /tmp/compare-bind`
 <PlayWithDocker client:visible code={vsCode} label="เปรียบเทียบ volumes และ bind mounts แบบ side by side" />
 
 <Callout title="Volumes สำหรับข้อมูลที่เก็บไว้ Bind mounts สำหรับ code ที่แก้ไข">
-mental model ง่ายๆ: ถ้าต้องการให้ข้อมูลรอดชีวิตจาก container และย้ายระหว่างสภาพแวดล้อม ใช้ named volume ถ้าต้องการให้ host และ container แชร์ view ของไฟล์เดิมแบบ live ระหว่างการพัฒนา ใช้ bind mount ใน production ให้เลือก named volumes เพราะพกพาได้ Docker จัดการให้ และสำรองข้อมูลได้ง่ายกว่า
+mental model ง่ายๆ: ถ้าต้องการให้ข้อมูลรอดชีวิตจาก container และย้ายระหว่าง environment ใช้ named volume ถ้าต้องการให้ host และ container แชร์ view ของไฟล์เดิมแบบ live ระหว่างการพัฒนา ใช้ bind mount ใน production ให้เลือก named volumes เพราะพกพาได้ Docker จัดการให้ และสำรองข้อมูลได้ง่ายกว่า
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Named volume | Docker จัดการเอง พกพาข้าม host ได้ สำรองข้อมูลง่ายด้วย throwaway container | เรียกดูไฟล์ตรงจาก host filesystem ไม่ได้ ต้อง mount เข้า container ก่อน |
+| Bind mount | เข้าถึง path บน host ได้โดยตรง เหมาะกับ dev workflow ที่ต้องแก้ไฟล์บ่อยๆ | ผูกกับโครงสร้างไดเรกทอรีของ host เครื่องนั้น ย้ายข้าม environment ยาก |
+
+## Common Mistakes
+
+- เลือก bind mount สำหรับเก็บข้อมูลฐานข้อมูล production เพราะ "เห็นไฟล์ตรงๆ ง่ายดี" ทั้งที่ named volume คือตัวเลือกที่ถูกต้องกว่า
+- รัน `docker compose down -v` ทั้งที่ตั้งใจแค่หยุด container ทำให้ named volume ที่ผูกกับ service ถูกลบไปด้วย
+- ไม่เคยตั้งแผนสำรองข้อมูลให้ named volume เพราะเข้าใจผิดว่า Docker จัดการ backup ให้อัตโนมัติ
+
+> 💡 Real World Example
+>
+> official Postgres/MySQL Docker image documentation แนะนำให้ใช้ named volume mount ที่ `/var/lib/postgresql/data` เป็น pattern มาตรฐานสำหรับ production ส่วน bind mount ใช้เฉพาะตอนพัฒนาเพื่อความสะดวกในการแก้ไข config หรือ source code
 
 export const quizVsbind = [
   {

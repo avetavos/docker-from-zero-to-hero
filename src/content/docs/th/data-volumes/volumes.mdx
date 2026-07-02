@@ -19,7 +19,7 @@ import ProgressTracker from '../../../../components/ProgressTracker.tsx';
 - ทำงานได้เหมือนกันบน Linux, macOS และ Windows
 - รอดจาก `docker rm` — volume แยกจาก container
 - สามารถแชร์ระหว่าง container หลายตัวพร้อมกันได้
-- เป็นวิธีที่แนะนำในการเก็บข้อมูลแอปพลิเคชันใน production
+- เป็นวิธีที่แนะนำในการเก็บข้อมูล application ใน production
 
 ## การจัดการ volumes
 
@@ -128,8 +128,26 @@ docker volume rm demo-vol`
 <PlayWithDocker client:visible code={namedVolumeCode} label="เขียนข้อมูล สร้าง container ใหม่ ข้อมูลยังอยู่" />
 
 <Callout title="Named volumes เป็นวิธีที่แนะนำในการเก็บข้อมูลถาวร">
-ใช้ named volumes สำหรับข้อมูลที่แอปพลิเคชันต้องเก็บรักษาข้ามการ deploy — ไฟล์ฐานข้อมูล เนื้อหาที่อัปโหลด ข้อมูล cache Docker จัดการตำแหน่งที่จัดเก็บ ทำให้ configuration สามารถพกพาได้ข้ามสภาพแวดล้อม host ต่างๆ โดยไม่ต้องเปลี่ยน flag แม้แต่อันเดียว
+ใช้ named volumes สำหรับข้อมูลที่ application ต้องเก็บรักษาข้ามการ deploy — ไฟล์ฐานข้อมูล เนื้อหาที่อัปโหลด ข้อมูล cache Docker จัดการตำแหน่งที่จัดเก็บ ทำให้ configuration สามารถพกพาได้ข้าม environment host ต่างๆ โดยไม่ต้องเปลี่ยน flag แม้แต่อันเดียว
 </Callout>
+
+## Trade-offs
+
+| ตัวเลือก | Benefit | Cost |
+|---|---|---|
+| Named volume | Docker จัดการ path ให้ ย้าย host ได้ backup ง่ายด้วย throwaway container | เข้าถึงข้อมูลตรงจาก host filesystem ไม่ได้ ต้องผ่าน container เสมอ |
+| Bind mount | เห็นและแก้ไขไฟล์ตรงจาก host ได้ทันที | ผูกกับ path เฉพาะของ host เครื่องนั้น ย้ายข้าม environment ยาก |
+
+## Common Mistakes
+
+- ใช้ bind mount แทน named volume สำหรับข้อมูลฐานข้อมูลใน production ทำให้ portability หายไป
+- รัน `docker rm -v` หรือ `docker compose down -v` โดยไม่ตั้งใจ แล้วข้อมูลใน volume หายทั้งหมด
+- ไม่มีแผนสำรองข้อมูลสำหรับ volume เลย คิดว่า "volume คงอยู่ตลอดไป" แล้วไม่เคย backup
+- คิดว่าข้อมูลใน volume จะรอดจาก `docker system prune -a --volumes` โดยไม่ตรวจสอบก่อนรัน
+
+> 💡 Real World Example
+>
+> official Postgres image บน Docker Hub แนะนำให้ mount named volume ที่ `/var/lib/postgresql/data` เป็น pattern มาตรฐานสำหรับ production เพื่อให้ข้อมูลฐานข้อมูลรอดจากการอัปเดต image หรือสร้าง container ใหม่
 
 export const quizVolumes = [
   {
